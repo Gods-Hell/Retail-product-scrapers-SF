@@ -6,7 +6,7 @@ This project is designed for **SKU benchmarking, private label tracking, and cat
 
 ---
 
-## 📌 Supported Platforms
+## Supported Platforms
 
 * JioMart (Single + Multi-brand scraping)
 * Nature’s Basket
@@ -17,7 +17,7 @@ This project is designed for **SKU benchmarking, private label tracking, and cat
 
 ## 🚀 Key Features
 
-### 🔎 Smart Product Filtering
+### Smart Product Filtering
 
 * Multi-word relevance scoring
 * Synonym-based matching (Indian + English)
@@ -27,14 +27,14 @@ This project is designed for **SKU benchmarking, private label tracking, and cat
   * 3 words → 67%
   * 4+ words → 50%
 
-### 🧠 Advanced Logic
+### Advanced Logic
 
 * Multipack filtering (removes combos/bundles)
 * Category validation (ensures product type relevance)
 * Private label detection (e.g., Reliance brands)
 * Exact brand matching (for multi-brand scraping)
 
-### 📊 Output Formats
+### Output Formats
 
 * Structured Excel reports
 * Console output (for quick debugging)
@@ -46,7 +46,7 @@ This project is designed for **SKU benchmarking, private label tracking, and cat
 
 ---
 
-## ⚙️ Installation
+## Installation
 
 Clone the repository:
 
@@ -63,7 +63,7 @@ pip install -r requirements.txt
 
 ---
 
-## 📦 Requirements
+##  Requirements
 
 Create a `requirements.txt` file with:
 
@@ -74,7 +74,7 @@ openpyxl
 
 ---
 
-## ▶️ Usage
+##  Usage
 
 Run individual scrapers:
 
@@ -88,9 +88,9 @@ python le_marche_api.py
 
 ---
 
-## ⚠️ Important Notes
+## Important Notes
 
-### 🔐 API Tokens (JioMart)
+### API Tokens (JioMart)
 
 Some scripts require fresh authentication tokens.
 
@@ -100,25 +100,25 @@ Some scripts require fresh authentication tokens.
   * `COOKIE`
   * `x-fp-signature`
 
-👉 These expire frequently and must be refreshed from browser network calls.
+These expire frequently and must be refreshed from browser network calls.
 
 ---
 
-### 📍 Location-Based Results
+### Location-Based Results
 
 * APIs use location headers (latitude, pincode)
 * Product availability may vary by region
 
 ---
 
-### ⏱ Rate Limiting
+### Rate Limiting
 
 * Scripts include delays to avoid blocking
 * Avoid aggressive parallel execution
 
 ---
 
-## 📊 Example Use Cases
+## Example Use Cases
 
 * SKU benchmarking across retail chains
 * Private label identification
@@ -128,7 +128,7 @@ Some scripts require fresh authentication tokens.
 
 ---
 
-## 🧠 Project Structure (Recommended)
+## Project Structure (Recommended)
 
 ```
 retail-product-scrapers/
@@ -148,13 +148,13 @@ retail-product-scrapers/
 
 ---
 
-## 👨‍💻 Author
+##  Author
 
 Developed as part of a **Modern Trade Retail Analysis Project**, focused on SKU intelligence and institutional sales insights.
 
 ---
 
-## ⚡ Future Improvements
+## Future Improvements
 
 * CLI interface (single command execution)
 * Config file for tokens and settings
