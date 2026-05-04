@@ -1,0 +1,951 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>SF Product Scanner</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@300;400;600&display=swap');
+
+  :root {
+    --green: #00c853;
+    --dark: #0a0f0a;
+    --panel: #111711;
+    --border: #1e2e1e;
+    --text: #d4e8d4;
+    --muted: #5a7a5a;
+    --accent: #00ff88;
+    --red: #ff4444;
+    --yellow: #ffd600;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--dark);
+    color: var(--text);
+    font-family: 'IBM Plex Sans', sans-serif;
+    min-height: 100vh;
+    padding-bottom: 40px;
+  }
+
+  header {
+    background: var(--panel);
+    border-bottom: 1px solid var(--border);
+    padding: 14px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  .logo {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--accent);
+    letter-spacing: 2px;
+  }
+
+  .count-badge {
+    background: var(--border);
+    border: 1px solid var(--green);
+    color: var(--green);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    padding: 3px 10px;
+    border-radius: 20px;
+  }
+
+  .container { padding: 16px; max-width: 480px; margin: 0 auto; }
+
+  /* Scanner section */
+  .scanner-card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 16px;
+  }
+
+  .scanner-header {
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--muted);
+  }
+  .dot.active { background: var(--green); box-shadow: 0 0 8px var(--green); animation: pulse 1.5s infinite; }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+
+  .scanner-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  #scanner-viewport {
+    position: relative;
+    width: 100%;
+    height: 220px;
+    background: #000;
+    display: none;
+    overflow: hidden;
+  }
+
+  #scanner-viewport canvas,
+  #scanner-viewport video {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover;
+  }
+
+  .scan-line {
+    position: absolute;
+    left: 10%; right: 10%;
+    height: 2px;
+    background: var(--accent);
+    box-shadow: 0 0 10px var(--accent);
+    animation: scanline 2s ease-in-out infinite;
+    pointer-events: none;
+    z-index: 10;
+  }
+
+  @keyframes scanline {
+    0% { top: 20%; }
+    50% { top: 80%; }
+    100% { top: 20%; }
+  }
+
+  .scan-corners {
+    position: absolute;
+    inset: 15px;
+    pointer-events: none;
+    z-index: 10;
+  }
+
+  .scan-corners::before, .scan-corners::after {
+    content: '';
+    position: absolute;
+    width: 24px; height: 24px;
+    border-color: var(--accent);
+    border-style: solid;
+  }
+
+  .scan-corners::before {
+    top: 0; left: 0;
+    border-width: 2px 0 0 2px;
+  }
+
+  .scan-corners::after {
+    bottom: 0; right: 0;
+    border-width: 0 2px 2px 0;
+  }
+
+  .corner-tr, .corner-bl {
+    position: absolute;
+    width: 24px; height: 24px;
+    border-color: var(--accent);
+    border-style: solid;
+  }
+
+  .corner-tr { top: 15px; right: 15px; border-width: 2px 2px 0 0; }
+  .corner-bl { bottom: 15px; left: 15px; border-width: 0 0 2px 2px; }
+
+  .scanner-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 160px;
+    gap: 12px;
+    color: var(--muted);
+  }
+
+  .barcode-icon {
+    font-size: 48px;
+    opacity: 0.4;
+  }
+
+  .scanner-placeholder p {
+    font-size: 13px;
+    text-align: center;
+  }
+
+  .btn-scan {
+    display: block;
+    width: calc(100% - 32px);
+    margin: 16px;
+    padding: 14px;
+    background: var(--accent);
+    color: var(--dark);
+    border: none;
+    border-radius: 8px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    cursor: pointer;
+    transition: all 0.15s;
+    text-transform: uppercase;
+  }
+
+  .btn-scan:active { transform: scale(0.97); }
+  .btn-scan.stop { background: var(--red); color: #fff; }
+
+  /* Manual barcode input */
+  .manual-row {
+    display: flex;
+    gap: 8px;
+    padding: 0 16px 16px;
+  }
+
+  .manual-row input {
+    flex: 1;
+    background: var(--dark);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    padding: 10px 12px;
+    outline: none;
+  }
+
+  .manual-row input:focus { border-color: var(--accent); }
+  .manual-row input::placeholder { color: var(--muted); }
+
+  .btn-go {
+    background: var(--border);
+    border: 1px solid var(--green);
+    color: var(--green);
+    border-radius: 6px;
+    padding: 10px 16px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+
+  .btn-go:active { background: var(--green); color: var(--dark); }
+
+  /* Status */
+  .status-bar {
+    margin-bottom: 16px;
+    padding: 10px 14px;
+    border-radius: 8px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    display: none;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .status-bar.loading { display: flex; background: #1a1a0a; border: 1px solid var(--yellow); color: var(--yellow); }
+  .status-bar.success { display: flex; background: #0a1a0a; border: 1px solid var(--green); color: var(--green); }
+  .status-bar.error { display: flex; background: #1a0a0a; border: 1px solid var(--red); color: var(--red); }
+
+  .spinner {
+    width: 14px; height: 14px;
+    border: 2px solid transparent;
+    border-top-color: currentColor;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    flex-shrink: 0;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Form */
+  .form-card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 16px;
+    display: none;
+  }
+
+  .form-card.visible { display: block; }
+
+  .form-title {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 16px;
+  }
+
+  .field-group { margin-bottom: 14px; }
+
+  .field-label {
+    display: block;
+    font-size: 11px;
+    font-family: 'IBM Plex Mono', monospace;
+    color: var(--muted);
+    margin-bottom: 6px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+
+  .field-label span {
+    color: var(--accent);
+    font-size: 9px;
+    margin-left: 4px;
+  }
+
+  .field-input {
+    width: 100%;
+    background: var(--dark);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text);
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 14px;
+    padding: 10px 12px;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+
+  .field-input:focus { border-color: var(--accent); }
+  .field-input::placeholder { color: var(--muted); }
+
+  .field-input.auto-filled {
+    border-color: var(--green);
+    background: #0a150a;
+  }
+
+  .field-input[type="number"] { -moz-appearance: textfield; }
+
+  select.field-input {
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%235a7a5a'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+  }
+
+  .two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  .divider {
+    height: 1px;
+    background: var(--border);
+    margin: 16px 0;
+  }
+
+  .section-label {
+    font-size: 10px;
+    font-family: 'IBM Plex Mono', monospace;
+    color: var(--muted);
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .section-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  .auto-tag {
+    display: inline-block;
+    background: #0a1a0a;
+    border: 1px solid var(--green);
+    color: var(--green);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px;
+    padding: 1px 6px;
+    border-radius: 3px;
+    margin-left: auto;
+    letter-spacing: 1px;
+  }
+
+  /* Action buttons */
+  .btn-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-top: 16px;
+  }
+
+  .btn-save {
+    padding: 13px;
+    background: var(--green);
+    color: var(--dark);
+    border: none;
+    border-radius: 8px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    letter-spacing: 1px;
+    transition: all 0.15s;
+  }
+
+  .btn-clear {
+    padding: 13px;
+    background: transparent;
+    color: var(--muted);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    cursor: pointer;
+    letter-spacing: 1px;
+    transition: all 0.15s;
+  }
+
+  .btn-save:active { transform: scale(0.97); }
+  .btn-clear:active { border-color: var(--red); color: var(--red); }
+
+  /* Records table */
+  .records-card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 16px;
+  }
+
+  .records-header {
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .records-title {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  .btn-export {
+    background: transparent;
+    border: 1px solid var(--yellow);
+    color: var(--yellow);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    padding: 5px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    letter-spacing: 1px;
+    transition: all 0.15s;
+  }
+
+  .btn-export:active { background: var(--yellow); color: var(--dark); }
+
+  .records-empty {
+    padding: 32px 16px;
+    text-align: center;
+    color: var(--muted);
+    font-size: 13px;
+  }
+
+  .record-item {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .record-item:last-child { border-bottom: none; }
+
+  .record-num {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    color: var(--muted);
+    width: 20px;
+    flex-shrink: 0;
+  }
+
+  .record-info { flex: 1; min-width: 0; }
+
+  .record-name {
+    font-size: 13px;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .record-sub {
+    font-size: 11px;
+    color: var(--muted);
+    font-family: 'IBM Plex Mono', monospace;
+    margin-top: 2px;
+  }
+
+  .record-price {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    color: var(--accent);
+    flex-shrink: 0;
+  }
+
+  .btn-del {
+    background: none;
+    border: none;
+    color: var(--muted);
+    cursor: pointer;
+    font-size: 16px;
+    padding: 2px 6px;
+    flex-shrink: 0;
+  }
+
+  .btn-del:active { color: var(--red); }
+
+  /* Toast */
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(80px);
+    background: var(--green);
+    color: var(--dark);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 10px 20px;
+    border-radius: 20px;
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    z-index: 999;
+    white-space: nowrap;
+  }
+
+  .toast.show { transform: translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">SF · SCANNER</div>
+  <div class="count-badge" id="countBadge">0 products</div>
+</header>
+
+<div class="container">
+
+  <!-- Scanner Card -->
+  <div class="scanner-card">
+    <div class="scanner-header">
+      <div class="dot" id="scanDot"></div>
+      <div class="scanner-label" id="scanLabel">Camera Scanner</div>
+    </div>
+    <div id="scanner-placeholder" class="scanner-placeholder">
+      <div class="barcode-icon">▋▌▋▌▋▌▋</div>
+      <p>Tap below to activate camera<br>and scan product barcode</p>
+    </div>
+    <div id="scanner-viewport">
+      <div class="scan-line"></div>
+      <div class="scan-corners"></div>
+      <div class="corner-tr"></div>
+      <div class="corner-bl"></div>
+    </div>
+    <button class="btn-scan" id="btnToggleScan" onclick="toggleScanner()">START SCANNING</button>
+    <div class="manual-row">
+      <input type="text" id="manualBarcode" placeholder="or type barcode manually..." inputmode="numeric">
+      <button class="btn-go" onclick="lookupManual()">FETCH →</button>
+    </div>
+  </div>
+
+  <!-- Status Bar -->
+  <div class="status-bar" id="statusBar">
+    <div class="spinner" id="statusSpinner"></div>
+    <span id="statusText"></span>
+  </div>
+
+  <!-- Product Form -->
+  <div class="form-card" id="formCard">
+    <div class="form-title">Product Details <span class="auto-tag">AUTO-FILLED</span></div>
+
+    <div class="section-label">Auto-fetched from barcode</div>
+
+    <div class="field-group">
+      <label class="field-label">Product Name <span>*</span></label>
+      <input type="text" class="field-input" id="fName" placeholder="e.g. Maggi Noodles">
+    </div>
+
+    <div class="two-col">
+      <div class="field-group">
+        <label class="field-label">Brand</label>
+        <input type="text" class="field-input" id="fBrand" placeholder="Brand">
+      </div>
+      <div class="field-group">
+        <label class="field-label">Pack Size</label>
+        <input type="text" class="field-input" id="fPackSize" placeholder="e.g. 200g">
+      </div>
+    </div>
+
+    <div class="field-group">
+      <label class="field-label">Category</label>
+      <input type="text" class="field-input" id="fCategory" placeholder="e.g. Condiments, Sauces">
+    </div>
+
+    <div class="field-group">
+      <label class="field-label">Barcode</label>
+      <input type="text" class="field-input" id="fBarcode" placeholder="Barcode number" readonly style="opacity:0.6">
+    </div>
+
+    <div class="divider"></div>
+    <div class="section-label">Fill manually (store data)</div>
+
+    <div class="two-col">
+      <div class="field-group">
+        <label class="field-label">MRP (₹) <span>*</span></label>
+        <input type="number" class="field-input" id="fMRP" placeholder="0.00" inputmode="decimal">
+      </div>
+      <div class="field-group">
+        <label class="field-label">Selling Price (₹)</label>
+        <input type="number" class="field-input" id="fSP" placeholder="0.00" inputmode="decimal">
+      </div>
+    </div>
+
+    <div class="two-col">
+      <div class="field-group">
+        <label class="field-label">Shelf Position</label>
+        <select class="field-input" id="fShelf">
+          <option value="">Select...</option>
+          <option>Eye Level</option>
+          <option>Top Shelf</option>
+          <option>Middle Shelf</option>
+          <option>Bottom Shelf</option>
+          <option>Floor Stack</option>
+          <option>Gondola End</option>
+          <option>Checkout</option>
+        </select>
+      </div>
+      <div class="field-group">
+        <label class="field-label">Facings</label>
+        <input type="number" class="field-input" id="fFacings" placeholder="# facings" inputmode="numeric">
+      </div>
+    </div>
+
+    <div class="field-group">
+      <label class="field-label">Store / Retailer</label>
+      <select class="field-input" id="fStore">
+        <option value="">Select store...</option>
+        <option>Reliance Smart Bazaar</option>
+        <option>DMart</option>
+        <option>BigBasket</option>
+        <option>Spencer's</option>
+        <option>Star Bazaar</option>
+        <option>More Retail</option>
+        <option>Nature's Basket</option>
+        <option>Foodhall</option>
+        <option>Le Marche</option>
+        <option>Lulu Hypermarket</option>
+        <option>Metro Cash & Carry</option>
+        <option>Walmart Best Price</option>
+        <option>Heritage Fresh</option>
+        <option>Nilgiris</option>
+        <option>Sahakari Bhandar</option>
+        <option>Other</option>
+      </select>
+    </div>
+
+    <div class="two-col">
+      <div class="field-group">
+        <label class="field-label">Availability</label>
+        <select class="field-input" id="fAvail">
+          <option value="">...</option>
+          <option>In Stock</option>
+          <option>Low Stock</option>
+          <option>Out of Stock</option>
+        </select>
+      </div>
+      <div class="field-group">
+        <label class="field-label">Promo?</label>
+        <select class="field-input" id="fPromo">
+          <option value="">...</option>
+          <option>None</option>
+          <option>Discount</option>
+          <option>BOGO</option>
+          <option>Bundle</option>
+          <option>Cashback</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="field-group">
+      <label class="field-label">Notes</label>
+      <input type="text" class="field-input" id="fNotes" placeholder="Any observations...">
+    </div>
+
+    <div class="btn-row">
+      <button class="btn-save" onclick="saveRecord()">+ SAVE PRODUCT</button>
+      <button class="btn-clear" onclick="clearForm()">CLEAR</button>
+    </div>
+  </div>
+
+  <!-- Records -->
+  <div class="records-card">
+    <div class="records-header">
+      <div class="records-title">Saved Products</div>
+      <button class="btn-export" onclick="exportCSV()">↓ EXPORT CSV</button>
+    </div>
+    <div id="recordsList">
+      <div class="records-empty">No products scanned yet.<br>Start scanning to build your list.</div>
+    </div>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+let records = JSON.parse(localStorage.getItem('sf_records') || '[]');
+let scannerActive = false;
+let lastScanned = null;
+let scanCooldown = false;
+
+function renderRecords() {
+  const list = document.getElementById('recordsList');
+  document.getElementById('countBadge').textContent = records.length + ' product' + (records.length !== 1 ? 's' : '');
+  if (!records.length) {
+    list.innerHTML = '<div class="records-empty">No products scanned yet.<br>Start scanning to build your list.</div>';
+    return;
+  }
+  list.innerHTML = records.map((r, i) => `
+    <div class="record-item">
+      <div class="record-num">${i+1}</div>
+      <div class="record-info">
+        <div class="record-name">${r.name || 'Unknown'}</div>
+        <div class="record-sub">${r.brand || ''} · ${r.pack_size || ''} · ${r.store || ''}</div>
+      </div>
+      ${r.mrp ? `<div class="record-price">₹${r.mrp}</div>` : ''}
+      <button class="btn-del" onclick="deleteRecord(${i})">×</button>
+    </div>
+  `).join('');
+}
+
+function deleteRecord(i) {
+  records.splice(i, 1);
+  localStorage.setItem('sf_records', JSON.stringify(records));
+  renderRecords();
+  showToast('Removed');
+}
+
+function showStatus(type, msg) {
+  const bar = document.getElementById('statusBar');
+  const spinner = document.getElementById('statusSpinner');
+  const text = document.getElementById('statusText');
+  bar.className = 'status-bar ' + type;
+  spinner.style.display = type === 'loading' ? 'block' : 'none';
+  text.textContent = msg;
+  if (type !== 'loading') setTimeout(() => { bar.className = 'status-bar'; }, 3000);
+}
+
+async function fetchProduct(barcode) {
+  showStatus('loading', 'Fetching product data...');
+  try {
+    const res = await fetch(`https://world.openfoodfacts.org/api/v0/product/${barcode}.json`, {
+      headers: { 'User-Agent': 'SFScanner/1.0' }
+    });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const data = await res.json();
+    if (data.status !== 1) {
+      showStatus('error', 'Product not found — fill manually');
+      populateForm(barcode, null);
+      return;
+    }
+    const p = data.product;
+    showStatus('success', '✓ Product data loaded');
+    populateForm(barcode, {
+      name: p.product_name || '',
+      brand: p.brands || '',
+      pack_size: p.quantity || '',
+      category: p.categories ? p.categories.split(',')[0].trim() : '',
+      notes: [p.nutriscore_grade ? 'NutriScore: ' + p.nutriscore_grade.toUpperCase() : '', p.nova_group ? 'NOVA: ' + p.nova_group : ''].filter(Boolean).join(', ')
+    });
+  } catch(e) {
+    showStatus('error', 'Fetch failed — fill manually');
+    populateForm(barcode, null);
+  }
+}
+
+function populateForm(barcode, data) {
+  document.getElementById('formCard').classList.add('visible');
+  document.getElementById('fBarcode').value = barcode;
+
+  const fields = ['fName', 'fBrand', 'fPackSize', 'fCategory', 'fNotes'];
+  const keys = ['name', 'brand', 'pack_size', 'category', 'notes'];
+
+  fields.forEach((id, i) => {
+    const el = document.getElementById(id);
+    if (data && data[keys[i]]) {
+      el.value = data[keys[i]];
+      el.classList.add('auto-filled');
+    } else {
+      el.value = '';
+      el.classList.remove('auto-filled');
+    }
+  });
+
+  document.getElementById('fMRP').value = '';
+  document.getElementById('fSP').value = '';
+  document.getElementById('fShelf').value = '';
+  document.getElementById('fFacings').value = '';
+  document.getElementById('fAvail').value = '';
+  document.getElementById('fPromo').value = '';
+
+  // Scroll to form
+  setTimeout(() => document.getElementById('formCard').scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
+}
+
+function clearForm() {
+  document.getElementById('formCard').classList.remove('visible');
+  lastScanned = null;
+}
+
+function saveRecord() {
+  const name = document.getElementById('fName').value.trim();
+  if (!name) { showToast('Product name required!'); return; }
+
+  const record = {
+    barcode: document.getElementById('fBarcode').value,
+    name, 
+    brand: document.getElementById('fBrand').value,
+    pack_size: document.getElementById('fPackSize').value,
+    category: document.getElementById('fCategory').value,
+    mrp: document.getElementById('fMRP').value,
+    selling_price: document.getElementById('fSP').value,
+    shelf_position: document.getElementById('fShelf').value,
+    facings: document.getElementById('fFacings').value,
+    store: document.getElementById('fStore').value,
+    availability: document.getElementById('fAvail').value,
+    promo: document.getElementById('fPromo').value,
+    notes: document.getElementById('fNotes').value,
+    timestamp: new Date().toLocaleString('en-IN')
+  };
+
+  records.push(record);
+  localStorage.setItem('sf_records', JSON.stringify(records));
+  renderRecords();
+  clearForm();
+  showToast('✓ Product saved!');
+}
+
+function exportCSV() {
+  if (!records.length) { showToast('No records to export'); return; }
+  const headers = ['Barcode', 'Product Name', 'Brand', 'Pack Size', 'Category', 'MRP', 'Selling Price', 'Shelf Position', 'Facings', 'Store', 'Availability', 'Promo', 'Notes', 'Timestamp'];
+  const keys = ['barcode', 'name', 'brand', 'pack_size', 'category', 'mrp', 'selling_price', 'shelf_position', 'facings', 'store', 'availability', 'promo', 'notes', 'timestamp'];
+  const csv = [headers.join(','), ...records.map(r => keys.map(k => `"${(r[k]||'').replace(/"/g,'""')}"`).join(','))].join('\n');
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'SF_Store_Scan_' + new Date().toISOString().slice(0,10) + '.csv';
+  a.click();
+  showToast('CSV exported!');
+}
+
+function toggleScanner() {
+  if (scannerActive) stopScanner();
+  else startScanner();
+}
+
+function startScanner() {
+  const viewport = document.getElementById('scanner-viewport');
+  const placeholder = document.getElementById('scanner-placeholder');
+  viewport.style.display = 'block';
+  placeholder.style.display = 'none';
+  document.getElementById('btnToggleScan').textContent = 'STOP SCANNING';
+  document.getElementById('btnToggleScan').classList.add('stop');
+  document.getElementById('scanDot').classList.add('active');
+  document.getElementById('scanLabel').textContent = 'Scanning...';
+
+  Quagga.init({
+    inputStream: {
+      name: "Live",
+      type: "LiveStream",
+      target: viewport,
+      constraints: { facingMode: "environment", width: { ideal: 1280 }, height: { ideal: 720 } }
+    },
+    decoder: {
+      readers: ["ean_reader", "ean_8_reader", "upc_reader", "upc_e_reader", "code_128_reader"]
+    },
+    locate: true
+  }, err => {
+    if (err) {
+      showStatus('error', 'Camera access denied or unavailable');
+      stopScanner();
+      return;
+    }
+    Quagga.start();
+    scannerActive = true;
+  });
+
+  Quagga.onDetected(result => {
+    const code = result.codeResult.code;
+    if (scanCooldown || code === lastScanned) return;
+    scanCooldown = true;
+    lastScanned = code;
+    document.getElementById('manualBarcode').value = code;
+    stopScanner();
+    fetchProduct(code);
+    setTimeout(() => { scanCooldown = false; }, 3000);
+  });
+}
+
+function stopScanner() {
+  Quagga.stop();
+  scannerActive = false;
+  document.getElementById('scanner-viewport').style.display = 'none';
+  document.getElementById('scanner-placeholder').style.display = 'flex';
+  document.getElementById('btnToggleScan').textContent = 'START SCANNING';
+  document.getElementById('btnToggleScan').classList.remove('stop');
+  document.getElementById('scanDot').classList.remove('active');
+  document.getElementById('scanLabel').textContent = 'Camera Scanner';
+}
+
+function lookupManual() {
+  const val = document.getElementById('manualBarcode').value.trim();
+  if (!val) return;
+  lastScanned = val;
+  fetchProduct(val);
+}
+
+document.getElementById('manualBarcode').addEventListener('keydown', e => {
+  if (e.key === 'Enter') lookupManual();
+});
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+renderRecords();
+</script>
+</body>
+</html>
