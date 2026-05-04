@@ -30,703 +30,378 @@
     padding-bottom: 40px;
   }
 
-  header {
-    background: var(--panel);
-    border-bottom: 1px solid var(--border);
-    padding: 14px 20px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    position: sticky;
-    top: 0;
-    z-index: 100;
-  }
-
-  .logo {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--accent);
-    letter-spacing: 2px;
-  }
-
-  .count-badge {
-    background: var(--border);
-    border: 1px solid var(--green);
-    color: var(--green);
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 11px;
-    padding: 3px 10px;
-    border-radius: 20px;
-  }
-
-  .container { padding: 16px; max-width: 480px; margin: 0 auto; }
-
-  /* Scanner section */
-  .scanner-card {
-    background: var(--panel);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    overflow: hidden;
-    margin-bottom: 16px;
-  }
-
-  .scanner-header {
-    padding: 12px 16px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    border-bottom: 1px solid var(--border);
-  }
-
-  .dot {
-    width: 8px; height: 8px;
-    border-radius: 50%;
-    background: var(--muted);
-  }
-  .dot.active { background: var(--green); box-shadow: 0 0 8px var(--green); animation: pulse 1.5s infinite; }
-
-  @keyframes pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.4; }
-  }
-
-  .scanner-label {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 11px;
-    color: var(--muted);
-    letter-spacing: 1px;
-    text-transform: uppercase;
-  }
-
-  #scanner-viewport {
-    position: relative;
-    width: 100%;
-    height: 220px;
-    background: #000;
-    display: none;
-    overflow: hidden;
-  }
-
-  #scanner-viewport canvas,
-  #scanner-viewport video {
-    width: 100% !important;
-    height: 100% !important;
-    object-fit: cover;
-  }
-
-  .scan-line {
-    position: absolute;
-    left: 10%; right: 10%;
-    height: 2px;
-    background: var(--accent);
-    box-shadow: 0 0 10px var(--accent);
-    animation: scanline 2s ease-in-out infinite;
-    pointer-events: none;
-    z-index: 10;
-  }
-
-  @keyframes scanline {
-    0% { top: 20%; }
-    50% { top: 80%; }
-    100% { top: 20%; }
-  }
-
-  .scan-corners {
-    position: absolute;
-    inset: 15px;
-    pointer-events: none;
-    z-index: 10;
-  }
-
-  .scan-corners::before, .scan-corners::after {
-    content: '';
-    position: absolute;
-    width: 24px; height: 24px;
-    border-color: var(--accent);
-    border-style: solid;
-  }
-
-  .scan-corners::before {
-    top: 0; left: 0;
-    border-width: 2px 0 0 2px;
-  }
-
-  .scan-corners::after {
-    bottom: 0; right: 0;
-    border-width: 0 2px 2px 0;
-  }
-
-  .corner-tr, .corner-bl {
-    position: absolute;
-    width: 24px; height: 24px;
-    border-color: var(--accent);
-    border-style: solid;
-  }
-
-  .corner-tr { top: 15px; right: 15px; border-width: 2px 2px 0 0; }
-  .corner-bl { bottom: 15px; left: 15px; border-width: 0 0 2px 2px; }
-
-  .scanner-placeholder {
+  /* STORE PICKER */
+  #storePicker {
+    position: fixed;
+    inset: 0;
+    background: var(--dark);
+    z-index: 999;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    height: 160px;
-    gap: 12px;
-    color: var(--muted);
+    padding: 24px;
+    overflow-y: auto;
   }
 
-  .barcode-icon {
-    font-size: 48px;
-    opacity: 0.4;
-  }
+  .picker-logo { font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--accent); letter-spacing:3px; margin-bottom:28px; }
+  .picker-title { font-size:20px; font-weight:600; margin-bottom:6px; text-align:center; }
+  .picker-sub { font-size:13px; color:var(--muted); margin-bottom:24px; text-align:center; }
 
-  .scanner-placeholder p {
-    font-size: 13px;
-    text-align: center;
-  }
+  .store-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; width:100%; max-width:400px; margin-bottom:14px; }
 
-  .btn-scan {
-    display: block;
-    width: calc(100% - 32px);
-    margin: 16px;
-    padding: 14px;
-    background: var(--accent);
-    color: var(--dark);
-    border: none;
-    border-radius: 8px;
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 13px;
-    font-weight: 600;
-    letter-spacing: 1px;
-    cursor: pointer;
-    transition: all 0.15s;
-    text-transform: uppercase;
-  }
+  .store-btn { background:var(--panel); border:1px solid var(--border); color:var(--text); padding:14px 10px; border-radius:10px; font-family:'IBM Plex Sans',sans-serif; font-size:13px; font-weight:600; cursor:pointer; transition:all .15s; text-align:center; line-height:1.3; }
+  .store-btn:active, .store-btn.selected { border-color:var(--accent); background:#0a1a0a; color:var(--accent); }
 
-  .btn-scan:active { transform: scale(0.97); }
-  .btn-scan.stop { background: var(--red); color: #fff; }
+  .store-other { width:100%; max-width:400px; background:var(--dark); border:1px solid var(--border); border-radius:8px; color:var(--text); font-family:'IBM Plex Sans',sans-serif; font-size:14px; padding:12px; outline:none; margin-bottom:14px; display:none; }
+  .store-other.show { display:block; }
+  .store-other:focus { border-color:var(--accent); }
 
-  /* Manual barcode input */
-  .manual-row {
-    display: flex;
-    gap: 8px;
-    padding: 0 16px 16px;
-  }
+  .btn-confirm { width:100%; max-width:400px; padding:15px; background:var(--accent); color:var(--dark); border:none; border-radius:10px; font-family:'IBM Plex Mono',monospace; font-size:13px; font-weight:600; letter-spacing:1px; cursor:pointer; opacity:.4; pointer-events:none; transition:all .15s; }
+  .btn-confirm.ready { opacity:1; pointer-events:all; }
 
-  .manual-row input {
-    flex: 1;
-    background: var(--dark);
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    color: var(--text);
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 13px;
-    padding: 10px 12px;
-    outline: none;
-  }
+  /* HEADER */
+  header { background:var(--panel); border-bottom:1px solid var(--border); padding:12px 16px; position:sticky; top:0; z-index:100; }
+  .header-row { display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; }
+  .logo { font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:600; color:var(--accent); letter-spacing:2px; }
+  .count-badge { background:var(--border); border:1px solid var(--green); color:var(--green); font-family:'IBM Plex Mono',monospace; font-size:11px; padding:3px 10px; border-radius:20px; }
 
-  .manual-row input:focus { border-color: var(--accent); }
-  .manual-row input::placeholder { color: var(--muted); }
+  .store-banner { display:flex; align-items:center; justify-content:space-between; background:#0a1a0a; border:1px solid var(--green); border-radius:8px; padding:8px 12px; }
+  .store-banner-left { display:flex; align-items:center; gap:8px; }
+  .store-dot { width:8px; height:8px; border-radius:50%; background:var(--green); box-shadow:0 0 6px var(--green); }
+  .store-banner-name { font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--green); font-weight:600; }
+  .btn-change-store { background:none; border:1px solid var(--muted); color:var(--muted); font-family:'IBM Plex Mono',monospace; font-size:10px; padding:3px 8px; border-radius:4px; cursor:pointer; }
+  .btn-change-store:active { border-color:var(--accent); color:var(--accent); }
 
-  .btn-go {
-    background: var(--border);
-    border: 1px solid var(--green);
-    color: var(--green);
-    border-radius: 6px;
-    padding: 10px 16px;
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 12px;
-    cursor: pointer;
-    transition: all 0.15s;
-    white-space: nowrap;
-  }
+  /* MAIN */
+  .container { padding:14px; max-width:480px; margin:0 auto; }
 
-  .btn-go:active { background: var(--green); color: var(--dark); }
+  .scanner-card { background:var(--panel); border:1px solid var(--border); border-radius:12px; overflow:hidden; margin-bottom:14px; }
+  .scanner-header { padding:10px 14px; display:flex; align-items:center; gap:8px; border-bottom:1px solid var(--border); }
+  .dot { width:8px; height:8px; border-radius:50%; background:var(--muted); }
+  .dot.active { background:var(--green); box-shadow:0 0 8px var(--green); animation:pulse 1.5s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+  .scanner-label { font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--muted); letter-spacing:1px; text-transform:uppercase; }
 
-  /* Status */
-  .status-bar {
-    margin-bottom: 16px;
-    padding: 10px 14px;
-    border-radius: 8px;
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 12px;
-    display: none;
-    align-items: center;
-    gap: 8px;
-  }
+  #scanner-viewport { position:relative; width:100%; height:220px; background:#000; display:none; overflow:hidden; }
+  #scanner-viewport canvas, #scanner-viewport video { width:100%!important; height:100%!important; object-fit:cover; }
+  .scan-line { position:absolute; left:10%; right:10%; height:2px; background:var(--accent); box-shadow:0 0 10px var(--accent); animation:scanline 2s ease-in-out infinite; pointer-events:none; z-index:10; }
+  @keyframes scanline { 0%{top:20%} 50%{top:80%} 100%{top:20%} }
+  .corner { position:absolute; width:22px; height:22px; border-color:var(--accent); border-style:solid; }
+  .c-tl { top:14px; left:14px; border-width:2px 0 0 2px; }
+  .c-tr { top:14px; right:14px; border-width:2px 2px 0 0; }
+  .c-bl { bottom:14px; left:14px; border-width:0 0 2px 2px; }
+  .c-br { bottom:14px; right:14px; border-width:0 2px 2px 0; }
 
-  .status-bar.loading { display: flex; background: #1a1a0a; border: 1px solid var(--yellow); color: var(--yellow); }
-  .status-bar.success { display: flex; background: #0a1a0a; border: 1px solid var(--green); color: var(--green); }
-  .status-bar.error { display: flex; background: #1a0a0a; border: 1px solid var(--red); color: var(--red); }
+  .scanner-placeholder { display:flex; flex-direction:column; align-items:center; justify-content:center; height:140px; gap:10px; color:var(--muted); }
+  .barcode-icon { font-size:40px; opacity:.4; }
+  .scanner-placeholder p { font-size:12px; text-align:center; }
 
-  .spinner {
-    width: 14px; height: 14px;
-    border: 2px solid transparent;
-    border-top-color: currentColor;
-    border-radius: 50%;
-    animation: spin 0.8s linear infinite;
-    flex-shrink: 0;
-  }
+  .btn-scan { display:block; width:calc(100% - 28px); margin:14px; padding:13px; background:var(--accent); color:var(--dark); border:none; border-radius:8px; font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:600; letter-spacing:1px; cursor:pointer; transition:all .15s; text-transform:uppercase; }
+  .btn-scan:active { transform:scale(.97); }
+  .btn-scan.stop { background:var(--red); color:#fff; }
 
-  @keyframes spin { to { transform: rotate(360deg); } }
+  .manual-row { display:flex; gap:8px; padding:0 14px 14px; }
+  .manual-row input { flex:1; background:var(--dark); border:1px solid var(--border); border-radius:6px; color:var(--text); font-family:'IBM Plex Mono',monospace; font-size:13px; padding:10px 12px; outline:none; }
+  .manual-row input:focus { border-color:var(--accent); }
+  .manual-row input::placeholder { color:var(--muted); }
+  .btn-go { background:var(--border); border:1px solid var(--green); color:var(--green); border-radius:6px; padding:10px 14px; font-family:'IBM Plex Mono',monospace; font-size:12px; cursor:pointer; white-space:nowrap; }
+  .btn-go:active { background:var(--green); color:var(--dark); }
 
-  /* Form */
-  .form-card {
-    background: var(--panel);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 16px;
-    margin-bottom: 16px;
-    display: none;
-  }
+  .status-bar { margin-bottom:14px; padding:10px 14px; border-radius:8px; font-family:'IBM Plex Mono',monospace; font-size:12px; display:none; align-items:center; gap:8px; }
+  .status-bar.loading { display:flex; background:#1a1a0a; border:1px solid var(--yellow); color:var(--yellow); }
+  .status-bar.success { display:flex; background:#0a1a0a; border:1px solid var(--green); color:var(--green); }
+  .status-bar.error { display:flex; background:#1a0a0a; border:1px solid var(--red); color:var(--red); }
+  .spinner { width:14px; height:14px; border:2px solid transparent; border-top-color:currentColor; border-radius:50%; animation:spin .8s linear infinite; flex-shrink:0; }
+  @keyframes spin { to{transform:rotate(360deg)} }
 
-  .form-card.visible { display: block; }
+  /* FORM */
+  .form-card { background:var(--panel); border:1px solid var(--border); border-radius:12px; padding:14px; margin-bottom:14px; display:none; }
+  .form-card.visible { display:block; }
+  .form-title { font-family:'IBM Plex Mono',monospace; font-size:10px; color:var(--muted); letter-spacing:2px; text-transform:uppercase; margin-bottom:14px; display:flex; align-items:center; justify-content:space-between; }
+  .auto-tag { background:#0a1a0a; border:1px solid var(--green); color:var(--green); font-family:'IBM Plex Mono',monospace; font-size:9px; padding:2px 7px; border-radius:3px; letter-spacing:1px; }
 
-  .form-title {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 10px;
-    color: var(--muted);
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    margin-bottom: 16px;
-  }
+  .field-group { margin-bottom:12px; }
+  .field-label { display:block; font-size:11px; font-family:'IBM Plex Mono',monospace; color:var(--muted); margin-bottom:5px; letter-spacing:.5px; text-transform:uppercase; }
+  .field-label span { color:var(--accent); font-size:9px; margin-left:3px; }
+  .field-input { width:100%; background:var(--dark); border:1px solid var(--border); border-radius:6px; color:var(--text); font-family:'IBM Plex Sans',sans-serif; font-size:14px; padding:10px 12px; outline:none; transition:border-color .15s; }
+  .field-input:focus { border-color:var(--accent); }
+  .field-input::placeholder { color:var(--muted); }
+  .field-input.auto-filled { border-color:var(--green); background:#0a150a; }
+  .field-input[type="number"] { -moz-appearance:textfield; }
+  select.field-input { appearance:none; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%235a7a5a'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 12px center; }
 
-  .field-group { margin-bottom: 14px; }
+  .two-col { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .divider { height:1px; background:var(--border); margin:14px 0; }
+  .section-label { font-size:10px; font-family:'IBM Plex Mono',monospace; color:var(--muted); letter-spacing:1.5px; text-transform:uppercase; margin-bottom:10px; display:flex; align-items:center; gap:8px; }
+  .section-label::after { content:''; flex:1; height:1px; background:var(--border); }
 
-  .field-label {
-    display: block;
-    font-size: 11px;
-    font-family: 'IBM Plex Mono', monospace;
-    color: var(--muted);
-    margin-bottom: 6px;
-    letter-spacing: 0.5px;
-    text-transform: uppercase;
-  }
+  .btn-row { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:14px; }
+  .btn-save { padding:13px; background:var(--green); color:var(--dark); border:none; border-radius:8px; font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:600; cursor:pointer; letter-spacing:1px; }
+  .btn-save:active { transform:scale(.97); }
+  .btn-clear { padding:13px; background:transparent; color:var(--muted); border:1px solid var(--border); border-radius:8px; font-family:'IBM Plex Mono',monospace; font-size:12px; cursor:pointer; letter-spacing:1px; }
+  .btn-clear:active { border-color:var(--red); color:var(--red); }
 
-  .field-label span {
-    color: var(--accent);
-    font-size: 9px;
-    margin-left: 4px;
-  }
+  .btn-same { width:100%; margin-top:10px; padding:12px; background:transparent; color:var(--yellow); border:1px solid var(--yellow); border-radius:8px; font-family:'IBM Plex Mono',monospace; font-size:11px; cursor:pointer; letter-spacing:1px; display:none; }
+  .btn-same.visible { display:block; }
+  .btn-same:active { background:var(--yellow); color:var(--dark); }
 
-  .field-input {
-    width: 100%;
-    background: var(--dark);
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    color: var(--text);
-    font-family: 'IBM Plex Sans', sans-serif;
-    font-size: 14px;
-    padding: 10px 12px;
-    outline: none;
-    transition: border-color 0.15s;
-  }
+  /* RECORDS */
+  .records-card { background:var(--panel); border:1px solid var(--border); border-radius:12px; overflow:hidden; margin-bottom:14px; }
+  .records-header { padding:12px 14px; display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid var(--border); }
+  .records-title { font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--muted); letter-spacing:1px; text-transform:uppercase; }
+  .btn-export { background:transparent; border:1px solid var(--yellow); color:var(--yellow); font-family:'IBM Plex Mono',monospace; font-size:10px; padding:5px 12px; border-radius:4px; cursor:pointer; letter-spacing:1px; }
+  .btn-export:active { background:var(--yellow); color:var(--dark); }
+  .records-empty { padding:28px 14px; text-align:center; color:var(--muted); font-size:13px; }
+  .record-item { padding:11px 14px; border-bottom:1px solid var(--border); display:flex; align-items:center; gap:10px; }
+  .record-item:last-child { border-bottom:none; }
+  .record-num { font-family:'IBM Plex Mono',monospace; font-size:10px; color:var(--muted); width:18px; flex-shrink:0; }
+  .record-info { flex:1; min-width:0; }
+  .record-name { font-size:13px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .record-sub { font-size:11px; color:var(--muted); font-family:'IBM Plex Mono',monospace; margin-top:2px; }
+  .record-price { font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--accent); flex-shrink:0; }
+  .btn-del { background:none; border:none; color:var(--muted); cursor:pointer; font-size:16px; padding:2px 6px; flex-shrink:0; }
+  .btn-del:active { color:var(--red); }
 
-  .field-input:focus { border-color: var(--accent); }
-  .field-input::placeholder { color: var(--muted); }
-
-  .field-input.auto-filled {
-    border-color: var(--green);
-    background: #0a150a;
-  }
-
-  .field-input[type="number"] { -moz-appearance: textfield; }
-
-  select.field-input {
-    appearance: none;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%235a7a5a'/%3E%3C/svg%3E");
-    background-repeat: no-repeat;
-    background-position: right 12px center;
-  }
-
-  .two-col {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 10px;
-  }
-
-  .divider {
-    height: 1px;
-    background: var(--border);
-    margin: 16px 0;
-  }
-
-  .section-label {
-    font-size: 10px;
-    font-family: 'IBM Plex Mono', monospace;
-    color: var(--muted);
-    letter-spacing: 1.5px;
-    text-transform: uppercase;
-    margin-bottom: 12px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-
-  .section-label::after {
-    content: '';
-    flex: 1;
-    height: 1px;
-    background: var(--border);
-  }
-
-  .auto-tag {
-    display: inline-block;
-    background: #0a1a0a;
-    border: 1px solid var(--green);
-    color: var(--green);
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 9px;
-    padding: 1px 6px;
-    border-radius: 3px;
-    margin-left: auto;
-    letter-spacing: 1px;
-  }
-
-  /* Action buttons */
-  .btn-row {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 10px;
-    margin-top: 16px;
-  }
-
-  .btn-save {
-    padding: 13px;
-    background: var(--green);
-    color: var(--dark);
-    border: none;
-    border-radius: 8px;
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 12px;
-    font-weight: 600;
-    cursor: pointer;
-    letter-spacing: 1px;
-    transition: all 0.15s;
-  }
-
-  .btn-clear {
-    padding: 13px;
-    background: transparent;
-    color: var(--muted);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 12px;
-    cursor: pointer;
-    letter-spacing: 1px;
-    transition: all 0.15s;
-  }
-
-  .btn-save:active { transform: scale(0.97); }
-  .btn-clear:active { border-color: var(--red); color: var(--red); }
-
-  /* Records table */
-  .records-card {
-    background: var(--panel);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    overflow: hidden;
-    margin-bottom: 16px;
-  }
-
-  .records-header {
-    padding: 12px 16px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    border-bottom: 1px solid var(--border);
-  }
-
-  .records-title {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 11px;
-    color: var(--muted);
-    letter-spacing: 1px;
-    text-transform: uppercase;
-  }
-
-  .btn-export {
-    background: transparent;
-    border: 1px solid var(--yellow);
-    color: var(--yellow);
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 10px;
-    padding: 5px 12px;
-    border-radius: 4px;
-    cursor: pointer;
-    letter-spacing: 1px;
-    transition: all 0.15s;
-  }
-
-  .btn-export:active { background: var(--yellow); color: var(--dark); }
-
-  .records-empty {
-    padding: 32px 16px;
-    text-align: center;
-    color: var(--muted);
-    font-size: 13px;
-  }
-
-  .record-item {
-    padding: 12px 16px;
-    border-bottom: 1px solid var(--border);
-    display: flex;
-    align-items: center;
-    gap: 12px;
-  }
-
-  .record-item:last-child { border-bottom: none; }
-
-  .record-num {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 10px;
-    color: var(--muted);
-    width: 20px;
-    flex-shrink: 0;
-  }
-
-  .record-info { flex: 1; min-width: 0; }
-
-  .record-name {
-    font-size: 13px;
-    font-weight: 600;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  .record-sub {
-    font-size: 11px;
-    color: var(--muted);
-    font-family: 'IBM Plex Mono', monospace;
-    margin-top: 2px;
-  }
-
-  .record-price {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 12px;
-    color: var(--accent);
-    flex-shrink: 0;
-  }
-
-  .btn-del {
-    background: none;
-    border: none;
-    color: var(--muted);
-    cursor: pointer;
-    font-size: 16px;
-    padding: 2px 6px;
-    flex-shrink: 0;
-  }
-
-  .btn-del:active { color: var(--red); }
-
-  /* Toast */
-  .toast {
-    position: fixed;
-    bottom: 24px;
-    left: 50%;
-    transform: translateX(-50%) translateY(80px);
-    background: var(--green);
-    color: var(--dark);
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 12px;
-    font-weight: 600;
-    padding: 10px 20px;
-    border-radius: 20px;
-    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-    z-index: 999;
-    white-space: nowrap;
-  }
-
-  .toast.show { transform: translateX(-50%) translateY(0); }
+  .toast { position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(80px); background:var(--green); color:var(--dark); font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:600; padding:10px 20px; border-radius:20px; transition:transform .3s cubic-bezier(.34,1.56,.64,1); z-index:9999; white-space:nowrap; }
+  .toast.show { transform:translateX(-50%) translateY(0); }
 </style>
 </head>
 <body>
 
-<header>
-  <div class="logo">SF · SCANNER</div>
-  <div class="count-badge" id="countBadge">0 products</div>
-</header>
-
-<div class="container">
-
-  <!-- Scanner Card -->
-  <div class="scanner-card">
-    <div class="scanner-header">
-      <div class="dot" id="scanDot"></div>
-      <div class="scanner-label" id="scanLabel">Camera Scanner</div>
-    </div>
-    <div id="scanner-placeholder" class="scanner-placeholder">
-      <div class="barcode-icon">▋▌▋▌▋▌▋</div>
-      <p>Tap below to activate camera<br>and scan product barcode</p>
-    </div>
-    <div id="scanner-viewport">
-      <div class="scan-line"></div>
-      <div class="scan-corners"></div>
-      <div class="corner-tr"></div>
-      <div class="corner-bl"></div>
-    </div>
-    <button class="btn-scan" id="btnToggleScan" onclick="toggleScanner()">START SCANNING</button>
-    <div class="manual-row">
-      <input type="text" id="manualBarcode" placeholder="or type barcode manually..." inputmode="numeric">
-      <button class="btn-go" onclick="lookupManual()">FETCH →</button>
-    </div>
+<!-- STORE PICKER -->
+<div id="storePicker">
+  <div class="picker-logo">SF · SCANNER</div>
+  <div class="picker-title">Which store today?</div>
+  <div class="picker-sub">Set once — applies to all products in this session</div>
+  <div class="store-grid">
+    <button class="store-btn" onclick="selectStore(this,'DMart')">DMart</button>
+    <button class="store-btn" onclick="selectStore(this,'Reliance Smart Bazaar')">Reliance Smart</button>
+    <button class="store-btn" onclick="selectStore(this,`Nature's Basket`)">Nature's Basket</button>
+    <button class="store-btn" onclick="selectStore(this,`Spencer's`)">Spencer's</button>
+    <button class="store-btn" onclick="selectStore(this,'Star Bazaar')">Star Bazaar</button>
+    <button class="store-btn" onclick="selectStore(this,'More Retail')">More Retail</button>
+    <button class="store-btn" onclick="selectStore(this,'Foodhall')">Foodhall</button>
+    <button class="store-btn" onclick="selectStore(this,'Le Marche')">Le Marche</button>
+    <button class="store-btn" onclick="selectStore(this,'Lulu Hypermarket')">Lulu Hypermarket</button>
+    <button class="store-btn" onclick="selectStore(this,'Metro Cash & Carry')">Metro C&amp;C</button>
+    <button class="store-btn" onclick="selectStore(this,'Sahakari Bhandar')">Sahakari Bhandar</button>
+    <button class="store-btn" onclick="selectStore(this,'other')">Other ✏️</button>
   </div>
+  <input type="text" class="store-other" id="otherStoreInput" placeholder="Type store name...">
+  <button class="btn-confirm" id="btnConfirm" onclick="confirmStore()">START SCANNING →</button>
+</div>
 
-  <!-- Status Bar -->
-  <div class="status-bar" id="statusBar">
-    <div class="spinner" id="statusSpinner"></div>
-    <span id="statusText"></span>
+<!-- MAIN APP -->
+<div id="mainApp" style="display:none">
+  <header>
+    <div class="header-row">
+      <div class="logo">SF · SCANNER</div>
+      <div class="count-badge" id="countBadge">0 products</div>
+    </div>
+    <div class="store-banner">
+      <div class="store-banner-left">
+        <div class="store-dot"></div>
+        <div class="store-banner-name" id="storeBannerName">—</div>
+      </div>
+      <button class="btn-change-store" onclick="changeStore()">CHANGE STORE</button>
+    </div>
+  </header>
+
+  <div class="container">
+
+    <div class="scanner-card">
+      <div class="scanner-header">
+        <div class="dot" id="scanDot"></div>
+        <div class="scanner-label" id="scanLabel">Camera Scanner</div>
+      </div>
+      <div id="scanner-placeholder" class="scanner-placeholder">
+        <div class="barcode-icon">▋▌▋▌▋▌▋</div>
+        <p>Tap below to activate camera<br>and scan product barcode</p>
+      </div>
+      <div id="scanner-viewport">
+        <div class="scan-line"></div>
+        <div class="corner c-tl"></div><div class="corner c-tr"></div>
+        <div class="corner c-bl"></div><div class="corner c-br"></div>
+      </div>
+      <button class="btn-scan" id="btnToggleScan" onclick="toggleScanner()">START SCANNING</button>
+      <div class="manual-row">
+        <input type="text" id="manualBarcode" placeholder="or type barcode manually..." inputmode="numeric">
+        <button class="btn-go" onclick="lookupManual()">FETCH →</button>
+      </div>
+    </div>
+
+    <div class="status-bar" id="statusBar">
+      <div class="spinner" id="statusSpinner"></div>
+      <span id="statusText"></span>
+    </div>
+
+    <div class="form-card" id="formCard">
+      <div class="form-title">Product Details <span class="auto-tag">AUTO-FILLED</span></div>
+
+      <div class="section-label">Auto-fetched from barcode</div>
+
+      <div class="field-group">
+        <label class="field-label">Product Name <span>*</span></label>
+        <input type="text" class="field-input" id="fName" placeholder="e.g. Kissan Tomato Ketchup">
+      </div>
+      <div class="two-col">
+        <div class="field-group">
+          <label class="field-label">Brand</label>
+          <input type="text" class="field-input" id="fBrand" placeholder="Brand">
+        </div>
+        <div class="field-group">
+          <label class="field-label">Pack Size</label>
+          <input type="text" class="field-input" id="fPackSize" placeholder="e.g. 200g">
+        </div>
+      </div>
+      <div class="field-group">
+        <label class="field-label">Category</label>
+        <input type="text" class="field-input" id="fCategory" placeholder="e.g. Sauces">
+      </div>
+      <div class="field-group">
+        <label class="field-label">Barcode</label>
+        <input type="text" class="field-input" id="fBarcode" placeholder="Barcode" readonly style="opacity:.6">
+      </div>
+
+      <div class="divider"></div>
+      <div class="section-label">Fill in-store</div>
+
+      <div class="two-col">
+        <div class="field-group">
+          <label class="field-label">MRP (₹) <span>*</span></label>
+          <input type="number" class="field-input" id="fMRP" placeholder="0.00" inputmode="decimal">
+        </div>
+        <div class="field-group">
+          <label class="field-label">Selling Price (₹)</label>
+          <input type="number" class="field-input" id="fSP" placeholder="0.00" inputmode="decimal">
+        </div>
+      </div>
+      <div class="two-col">
+        <div class="field-group">
+          <label class="field-label">Shelf Position</label>
+          <select class="field-input" id="fShelf">
+            <option value="">Select...</option>
+            <option>Eye Level</option>
+            <option>Top Shelf</option>
+            <option>Middle Shelf</option>
+            <option>Bottom Shelf</option>
+            <option>Floor Stack</option>
+            <option>Gondola End</option>
+            <option>Checkout</option>
+          </select>
+        </div>
+        <div class="field-group">
+          <label class="field-label">Facings</label>
+          <input type="number" class="field-input" id="fFacings" placeholder="# facings" inputmode="numeric">
+        </div>
+      </div>
+      <div class="two-col">
+        <div class="field-group">
+          <label class="field-label">Availability</label>
+          <select class="field-input" id="fAvail">
+            <option value="">...</option>
+            <option>In Stock</option>
+            <option>Low Stock</option>
+            <option>Out of Stock</option>
+          </select>
+        </div>
+        <div class="field-group">
+          <label class="field-label">Promo?</label>
+          <select class="field-input" id="fPromo">
+            <option value="">...</option>
+            <option>None</option>
+            <option>Discount</option>
+            <option>BOGO</option>
+            <option>Bundle</option>
+            <option>Cashback</option>
+          </select>
+        </div>
+      </div>
+      <div class="field-group">
+        <label class="field-label">Notes</label>
+        <input type="text" class="field-input" id="fNotes" placeholder="Any observations...">
+      </div>
+
+      <div class="btn-row">
+        <button class="btn-save" onclick="saveRecord()">+ SAVE PRODUCT</button>
+        <button class="btn-clear" onclick="clearForm()">CLEAR</button>
+      </div>
+      <button class="btn-same" id="btnSameProduct" onclick="sameProductNewSize()">
+        ↻ SAME PRODUCT — DIFFERENT SIZE / PRICE
+      </button>
+    </div>
+
+    <div class="records-card">
+      <div class="records-header">
+        <div class="records-title">Saved Products</div>
+        <button class="btn-export" onclick="exportCSV()">↓ EXPORT CSV</button>
+      </div>
+      <div id="recordsList">
+        <div class="records-empty">No products scanned yet.<br>Start scanning to build your list.</div>
+      </div>
+    </div>
+
   </div>
-
-  <!-- Product Form -->
-  <div class="form-card" id="formCard">
-    <div class="form-title">Product Details <span class="auto-tag">AUTO-FILLED</span></div>
-
-    <div class="section-label">Auto-fetched from barcode</div>
-
-    <div class="field-group">
-      <label class="field-label">Product Name <span>*</span></label>
-      <input type="text" class="field-input" id="fName" placeholder="e.g. Maggi Noodles">
-    </div>
-
-    <div class="two-col">
-      <div class="field-group">
-        <label class="field-label">Brand</label>
-        <input type="text" class="field-input" id="fBrand" placeholder="Brand">
-      </div>
-      <div class="field-group">
-        <label class="field-label">Pack Size</label>
-        <input type="text" class="field-input" id="fPackSize" placeholder="e.g. 200g">
-      </div>
-    </div>
-
-    <div class="field-group">
-      <label class="field-label">Category</label>
-      <input type="text" class="field-input" id="fCategory" placeholder="e.g. Condiments, Sauces">
-    </div>
-
-    <div class="field-group">
-      <label class="field-label">Barcode</label>
-      <input type="text" class="field-input" id="fBarcode" placeholder="Barcode number" readonly style="opacity:0.6">
-    </div>
-
-    <div class="divider"></div>
-    <div class="section-label">Fill manually (store data)</div>
-
-    <div class="two-col">
-      <div class="field-group">
-        <label class="field-label">MRP (₹) <span>*</span></label>
-        <input type="number" class="field-input" id="fMRP" placeholder="0.00" inputmode="decimal">
-      </div>
-      <div class="field-group">
-        <label class="field-label">Selling Price (₹)</label>
-        <input type="number" class="field-input" id="fSP" placeholder="0.00" inputmode="decimal">
-      </div>
-    </div>
-
-    <div class="two-col">
-      <div class="field-group">
-        <label class="field-label">Shelf Position</label>
-        <select class="field-input" id="fShelf">
-          <option value="">Select...</option>
-          <option>Eye Level</option>
-          <option>Top Shelf</option>
-          <option>Middle Shelf</option>
-          <option>Bottom Shelf</option>
-          <option>Floor Stack</option>
-          <option>Gondola End</option>
-          <option>Checkout</option>
-        </select>
-      </div>
-      <div class="field-group">
-        <label class="field-label">Facings</label>
-        <input type="number" class="field-input" id="fFacings" placeholder="# facings" inputmode="numeric">
-      </div>
-    </div>
-
-    <div class="field-group">
-      <label class="field-label">Store / Retailer</label>
-      <select class="field-input" id="fStore">
-        <option value="">Select store...</option>
-        <option>Reliance Smart Bazaar</option>
-        <option>DMart</option>
-        <option>BigBasket</option>
-        <option>Spencer's</option>
-        <option>Star Bazaar</option>
-        <option>More Retail</option>
-        <option>Nature's Basket</option>
-        <option>Foodhall</option>
-        <option>Le Marche</option>
-        <option>Lulu Hypermarket</option>
-        <option>Metro Cash & Carry</option>
-        <option>Walmart Best Price</option>
-        <option>Heritage Fresh</option>
-        <option>Nilgiris</option>
-        <option>Sahakari Bhandar</option>
-        <option>Other</option>
-      </select>
-    </div>
-
-    <div class="two-col">
-      <div class="field-group">
-        <label class="field-label">Availability</label>
-        <select class="field-input" id="fAvail">
-          <option value="">...</option>
-          <option>In Stock</option>
-          <option>Low Stock</option>
-          <option>Out of Stock</option>
-        </select>
-      </div>
-      <div class="field-group">
-        <label class="field-label">Promo?</label>
-        <select class="field-input" id="fPromo">
-          <option value="">...</option>
-          <option>None</option>
-          <option>Discount</option>
-          <option>BOGO</option>
-          <option>Bundle</option>
-          <option>Cashback</option>
-        </select>
-      </div>
-    </div>
-
-    <div class="field-group">
-      <label class="field-label">Notes</label>
-      <input type="text" class="field-input" id="fNotes" placeholder="Any observations...">
-    </div>
-
-    <div class="btn-row">
-      <button class="btn-save" onclick="saveRecord()">+ SAVE PRODUCT</button>
-      <button class="btn-clear" onclick="clearForm()">CLEAR</button>
-    </div>
-  </div>
-
-  <!-- Records -->
-  <div class="records-card">
-    <div class="records-header">
-      <div class="records-title">Saved Products</div>
-      <button class="btn-export" onclick="exportCSV()">↓ EXPORT CSV</button>
-    </div>
-    <div id="recordsList">
-      <div class="records-empty">No products scanned yet.<br>Start scanning to build your list.</div>
-    </div>
-  </div>
-
 </div>
 
 <div class="toast" id="toast"></div>
 
 <script>
 let records = JSON.parse(localStorage.getItem('sf_records') || '[]');
+let currentStore = '';
 let scannerActive = false;
 let lastScanned = null;
 let scanCooldown = false;
+let lastSavedProduct = null;
+let selectedStore = '';
 
+// ── STORE PICKER ──
+function selectStore(btn, store) {
+  document.querySelectorAll('.store-btn').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+  const otherInput = document.getElementById('otherStoreInput');
+  if (store === 'other') {
+    otherInput.classList.add('show');
+    otherInput.focus();
+    selectedStore = '';
+  } else {
+    otherInput.classList.remove('show');
+    selectedStore = store;
+  }
+  checkConfirmReady();
+}
+
+document.getElementById('otherStoreInput').addEventListener('input', function() {
+  selectedStore = this.value.trim();
+  checkConfirmReady();
+});
+
+function checkConfirmReady() {
+  document.getElementById('btnConfirm').classList.toggle('ready', !!selectedStore);
+}
+
+function confirmStore() {
+  if (!selectedStore) return;
+  currentStore = selectedStore;
+  document.getElementById('storeBannerName').textContent = currentStore;
+  document.getElementById('storePicker').style.display = 'none';
+  document.getElementById('mainApp').style.display = 'block';
+  renderRecords();
+}
+
+function changeStore() {
+  selectedStore = '';
+  document.querySelectorAll('.store-btn').forEach(b => b.classList.remove('selected'));
+  document.getElementById('otherStoreInput').classList.remove('show');
+  document.getElementById('otherStoreInput').value = '';
+  document.getElementById('btnConfirm').classList.remove('ready');
+  document.getElementById('storePicker').style.display = 'flex';
+  document.getElementById('mainApp').style.display = 'none';
+  if (scannerActive) stopScanner();
+}
+
+// ── RECORDS ──
 function renderRecords() {
   const list = document.getElementById('recordsList');
   document.getElementById('countBadge').textContent = records.length + ' product' + (records.length !== 1 ? 's' : '');
@@ -739,10 +414,10 @@ function renderRecords() {
       <div class="record-num">${i+1}</div>
       <div class="record-info">
         <div class="record-name">${r.name || 'Unknown'}</div>
-        <div class="record-sub">${r.brand || ''} · ${r.pack_size || ''} · ${r.store || ''}</div>
+        <div class="record-sub">${[r.brand, r.pack_size, r.store].filter(Boolean).join(' · ')}</div>
       </div>
-      ${r.mrp ? `<div class="record-price">₹${r.mrp}</div>` : ''}
-      <button class="btn-del" onclick="deleteRecord(${i})">×</button>
+      ${r.mrp ? `<div class="record-price">&#8377;${r.mrp}</div>` : ''}
+      <button class="btn-del" onclick="deleteRecord(${i})">&#215;</button>
     </div>
   `).join('');
 }
@@ -754,16 +429,16 @@ function deleteRecord(i) {
   showToast('Removed');
 }
 
+// ── STATUS ──
 function showStatus(type, msg) {
   const bar = document.getElementById('statusBar');
-  const spinner = document.getElementById('statusSpinner');
-  const text = document.getElementById('statusText');
   bar.className = 'status-bar ' + type;
-  spinner.style.display = type === 'loading' ? 'block' : 'none';
-  text.textContent = msg;
+  document.getElementById('statusSpinner').style.display = type === 'loading' ? 'block' : 'none';
+  document.getElementById('statusText').textContent = msg;
   if (type !== 'loading') setTimeout(() => { bar.className = 'status-bar'; }, 3000);
 }
 
+// ── FETCH ──
 async function fetchProduct(barcode) {
   showStatus('loading', 'Fetching product data...');
   try {
@@ -778,7 +453,7 @@ async function fetchProduct(barcode) {
       return;
     }
     const p = data.product;
-    showStatus('success', '✓ Product data loaded');
+    showStatus('success', 'Product data loaded');
     populateForm(barcode, {
       name: p.product_name || '',
       brand: p.brands || '',
@@ -795,111 +470,123 @@ async function fetchProduct(barcode) {
 function populateForm(barcode, data) {
   document.getElementById('formCard').classList.add('visible');
   document.getElementById('fBarcode').value = barcode;
+  document.getElementById('btnSameProduct').classList.remove('visible');
 
-  const fields = ['fName', 'fBrand', 'fPackSize', 'fCategory', 'fNotes'];
-  const keys = ['name', 'brand', 'pack_size', 'category', 'notes'];
+  const fields = ['fName','fBrand','fPackSize','fCategory','fNotes'];
+  const keys   = ['name', 'brand', 'pack_size', 'category', 'notes'];
 
   fields.forEach((id, i) => {
     const el = document.getElementById(id);
-    if (data && data[keys[i]]) {
-      el.value = data[keys[i]];
-      el.classList.add('auto-filled');
-    } else {
-      el.value = '';
-      el.classList.remove('auto-filled');
-    }
+    if (data && data[keys[i]]) { el.value = data[keys[i]]; el.classList.add('auto-filled'); }
+    else { el.value = ''; el.classList.remove('auto-filled'); }
   });
 
-  document.getElementById('fMRP').value = '';
-  document.getElementById('fSP').value = '';
-  document.getElementById('fShelf').value = '';
-  document.getElementById('fFacings').value = '';
-  document.getElementById('fAvail').value = '';
-  document.getElementById('fPromo').value = '';
+  ['fMRP','fSP','fShelf','fFacings','fAvail','fPromo'].forEach(id => {
+    const el = document.getElementById(id);
+    el.value = '';
+    el.classList.remove('auto-filled');
+  });
 
-  // Scroll to form
-  setTimeout(() => document.getElementById('formCard').scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
+  setTimeout(() => document.getElementById('formCard').scrollIntoView({ behavior:'smooth', block:'start' }), 100);
 }
 
 function clearForm() {
   document.getElementById('formCard').classList.remove('visible');
+  document.getElementById('btnSameProduct').classList.remove('visible');
   lastScanned = null;
+  lastSavedProduct = null;
 }
 
+// ── SAVE ──
 function saveRecord() {
   const name = document.getElementById('fName').value.trim();
   if (!name) { showToast('Product name required!'); return; }
 
   const record = {
-    barcode: document.getElementById('fBarcode').value,
-    name, 
-    brand: document.getElementById('fBrand').value,
-    pack_size: document.getElementById('fPackSize').value,
-    category: document.getElementById('fCategory').value,
-    mrp: document.getElementById('fMRP').value,
-    selling_price: document.getElementById('fSP').value,
+    barcode:        document.getElementById('fBarcode').value,
+    name,
+    brand:          document.getElementById('fBrand').value,
+    pack_size:      document.getElementById('fPackSize').value,
+    category:       document.getElementById('fCategory').value,
+    mrp:            document.getElementById('fMRP').value,
+    selling_price:  document.getElementById('fSP').value,
     shelf_position: document.getElementById('fShelf').value,
-    facings: document.getElementById('fFacings').value,
-    store: document.getElementById('fStore').value,
-    availability: document.getElementById('fAvail').value,
-    promo: document.getElementById('fPromo').value,
-    notes: document.getElementById('fNotes').value,
-    timestamp: new Date().toLocaleString('en-IN')
+    facings:        document.getElementById('fFacings').value,
+    store:          currentStore,
+    availability:   document.getElementById('fAvail').value,
+    promo:          document.getElementById('fPromo').value,
+    notes:          document.getElementById('fNotes').value,
+    timestamp:      new Date().toLocaleString('en-IN')
   };
 
   records.push(record);
   localStorage.setItem('sf_records', JSON.stringify(records));
+  lastSavedProduct = record;
   renderRecords();
-  clearForm();
-  showToast('✓ Product saved!');
+  showToast('Product saved!');
+
+  // Show "same product" button after saving
+  document.getElementById('btnSameProduct').classList.add('visible');
+
+  // Clear only variable fields, keep product info visible
+  ['fMRP','fSP','fFacings','fAvail','fPromo'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('fShelf').value = '';
+  document.getElementById('fNotes').value = '';
 }
 
+// ── SAME PRODUCT NEW SIZE ──
+function sameProductNewSize() {
+  if (!lastSavedProduct) return;
+  document.getElementById('fName').value     = lastSavedProduct.name;
+  document.getElementById('fBrand').value    = lastSavedProduct.brand;
+  document.getElementById('fCategory').value = lastSavedProduct.category;
+  document.getElementById('fPackSize').value = '';
+  document.getElementById('fBarcode').value  = '';
+  document.getElementById('fNotes').value    = '';
+
+  ['fMRP','fSP','fFacings','fAvail','fPromo'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('fShelf').value = '';
+
+  ['fName','fBrand','fCategory'].forEach(id => document.getElementById(id).classList.add('auto-filled'));
+  ['fPackSize','fBarcode'].forEach(id => document.getElementById(id).classList.remove('auto-filled'));
+
+  document.getElementById('btnSameProduct').classList.remove('visible');
+  showToast('Details carried over — enter new size & price');
+  setTimeout(() => document.getElementById('fPackSize').focus(), 150);
+}
+
+// ── EXPORT ──
 function exportCSV() {
   if (!records.length) { showToast('No records to export'); return; }
-  const headers = ['Barcode', 'Product Name', 'Brand', 'Pack Size', 'Category', 'MRP', 'Selling Price', 'Shelf Position', 'Facings', 'Store', 'Availability', 'Promo', 'Notes', 'Timestamp'];
-  const keys = ['barcode', 'name', 'brand', 'pack_size', 'category', 'mrp', 'selling_price', 'shelf_position', 'facings', 'store', 'availability', 'promo', 'notes', 'timestamp'];
+  const headers = ['Barcode','Product Name','Brand','Pack Size','Category','MRP','Selling Price','Shelf Position','Facings','Store','Availability','Promo','Notes','Timestamp'];
+  const keys    = ['barcode','name','brand','pack_size','category','mrp','selling_price','shelf_position','facings','store','availability','promo','notes','timestamp'];
   const csv = [headers.join(','), ...records.map(r => keys.map(k => `"${(r[k]||'').replace(/"/g,'""')}"`).join(','))].join('\n');
-  const blob = new Blob([csv], { type: 'text/csv' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = 'SF_Store_Scan_' + new Date().toISOString().slice(0,10) + '.csv';
+  const a = Object.assign(document.createElement('a'), {
+    href: URL.createObjectURL(new Blob([csv], {type:'text/csv'})),
+    download: 'SF_Scan_' + currentStore.replace(/\s+/g,'_') + '_' + new Date().toISOString().slice(0,10) + '.csv'
+  });
   a.click();
   showToast('CSV exported!');
 }
 
-function toggleScanner() {
-  if (scannerActive) stopScanner();
-  else startScanner();
-}
+// ── SCANNER ──
+function toggleScanner() { scannerActive ? stopScanner() : startScanner(); }
 
 function startScanner() {
-  const viewport = document.getElementById('scanner-viewport');
-  const placeholder = document.getElementById('scanner-placeholder');
-  viewport.style.display = 'block';
-  placeholder.style.display = 'none';
+  document.getElementById('scanner-viewport').style.display = 'block';
+  document.getElementById('scanner-placeholder').style.display = 'none';
   document.getElementById('btnToggleScan').textContent = 'STOP SCANNING';
   document.getElementById('btnToggleScan').classList.add('stop');
   document.getElementById('scanDot').classList.add('active');
   document.getElementById('scanLabel').textContent = 'Scanning...';
 
   Quagga.init({
-    inputStream: {
-      name: "Live",
-      type: "LiveStream",
-      target: viewport,
-      constraints: { facingMode: "environment", width: { ideal: 1280 }, height: { ideal: 720 } }
-    },
-    decoder: {
-      readers: ["ean_reader", "ean_8_reader", "upc_reader", "upc_e_reader", "code_128_reader"]
-    },
+    inputStream: { name:"Live", type:"LiveStream", target: document.getElementById('scanner-viewport'),
+      constraints: { facingMode:"environment", width:{ideal:1280}, height:{ideal:720} } },
+    decoder: { readers:["ean_reader","ean_8_reader","upc_reader","upc_e_reader","code_128_reader"] },
     locate: true
   }, err => {
-    if (err) {
-      showStatus('error', 'Camera access denied or unavailable');
-      stopScanner();
-      return;
-    }
+    if (err) { showStatus('error','Camera access denied'); stopScanner(); return; }
     Quagga.start();
     scannerActive = true;
   });
@@ -907,8 +594,7 @@ function startScanner() {
   Quagga.onDetected(result => {
     const code = result.codeResult.code;
     if (scanCooldown || code === lastScanned) return;
-    scanCooldown = true;
-    lastScanned = code;
+    scanCooldown = true; lastScanned = code;
     document.getElementById('manualBarcode').value = code;
     stopScanner();
     fetchProduct(code);
@@ -917,8 +603,7 @@ function startScanner() {
 }
 
 function stopScanner() {
-  Quagga.stop();
-  scannerActive = false;
+  Quagga.stop(); scannerActive = false;
   document.getElementById('scanner-viewport').style.display = 'none';
   document.getElementById('scanner-placeholder').style.display = 'flex';
   document.getElementById('btnToggleScan').textContent = 'START SCANNING';
@@ -934,9 +619,7 @@ function lookupManual() {
   fetchProduct(val);
 }
 
-document.getElementById('manualBarcode').addEventListener('keydown', e => {
-  if (e.key === 'Enter') lookupManual();
-});
+document.getElementById('manualBarcode').addEventListener('keydown', e => { if(e.key==='Enter') lookupManual(); });
 
 function showToast(msg) {
   const t = document.getElementById('toast');
