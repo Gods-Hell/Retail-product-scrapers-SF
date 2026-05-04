@@ -185,6 +185,22 @@
   .act-btn.copy:active { border-color:var(--purple); color:var(--purple); }
   .act-btn.del:active { border-color:var(--red); color:var(--red); }
 
+  /* MODE TOGGLE */
+  .header-actions { display:flex; gap:8px; align-items:center; }
+  .mode-toggle { background:#0a1a0a; border:1px solid var(--green); color:var(--green); font-family:'IBM Plex Mono',monospace; font-size:10px; font-weight:600; padding:3px 10px; border-radius:20px; cursor:pointer; letter-spacing:1px; white-space:nowrap; transition:all .15s; }
+  .mode-toggle:active { transform:scale(.95); }
+  .mode-toggle.offline { background:#1a1408; border-color:var(--yellow); color:var(--yellow); }
+
+  .scanner-card.hidden { display:none; }
+  .status-bar.hidden { display:none !important; }
+
+  .offline-hint { background:#1a1408; border:1px solid var(--yellow); color:var(--yellow); padding:9px 12px; border-radius:8px; font-family:'IBM Plex Mono',monospace; font-size:11px; margin-bottom:14px; text-align:center; display:none; letter-spacing:.5px; }
+  .offline-hint.visible { display:block; }
+
+  .btn-new-manual { display:none; width:100%; margin-bottom:14px; padding:18px 14px; background:var(--panel); border:1px dashed var(--yellow); color:var(--yellow); border-radius:12px; font-family:'IBM Plex Mono',monospace; font-size:13px; font-weight:600; cursor:pointer; letter-spacing:1px; text-transform:uppercase; transition:all .15s; }
+  .btn-new-manual.visible { display:block; }
+  .btn-new-manual:active { background:#1a1408; transform:scale(.99); }
+
   /* MODAL */
   .modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,.85); z-index:500; display:none; align-items:flex-start; justify-content:center; padding:20px 14px; overflow-y:auto; }
   .modal-overlay.show { display:flex; }
@@ -238,7 +254,10 @@
   <header>
     <div class="header-row">
       <div class="logo">SF · SCANNER</div>
-      <div class="count-badge" id="countBadge">0 products</div>
+      <div class="header-actions">
+        <button class="mode-toggle" id="modeToggle" onclick="toggleMode()">🌐 ONLINE</button>
+        <div class="count-badge" id="countBadge">0 products</div>
+      </div>
     </div>
     <div class="store-banner">
       <div class="store-banner-left">
@@ -250,6 +269,14 @@
   </header>
 
   <div class="container">
+
+    <div class="offline-hint" id="offlineHint">
+      📴 OFFLINE MODE — manual entry only, no barcode lookup
+    </div>
+
+    <button class="btn-new-manual" id="btnNewManual" onclick="startNewManualEntry()">
+      + NEW MANUAL ENTRY
+    </button>
 
     <div class="scanner-card">
       <div class="scanner-header">
@@ -450,6 +477,7 @@ let selectedStore = '';
 let editingIndex = null;     // null = new record, number = editing record at that index
 let viewingIndex = null;     // currently viewed record index (for modal Edit/Copy buttons)
 let privateLabelValue = '';  // 'yes' | 'no' | ''
+let appMode = localStorage.getItem('sf_mode') || 'online';  // 'online' | 'offline'
 
 // ── STORE PICKER ──
 function selectStore(btn, store) {
@@ -482,6 +510,7 @@ function confirmStore() {
   document.getElementById('storeBannerName').textContent = currentStore;
   document.getElementById('storePicker').style.display = 'none';
   document.getElementById('mainApp').style.display = 'block';
+  applyMode();
   renderRecords();
 }
 
@@ -494,6 +523,75 @@ function changeStore() {
   document.getElementById('storePicker').style.display = 'flex';
   document.getElementById('mainApp').style.display = 'none';
   if (scannerActive) stopScanner();
+}
+
+// ── ONLINE / OFFLINE MODE ──
+function applyMode() {
+  const isOffline = appMode === 'offline';
+  const toggle = document.getElementById('modeToggle');
+  toggle.textContent = isOffline ? '📴 OFFLINE' : '🌐 ONLINE';
+  toggle.classList.toggle('offline', isOffline);
+
+  document.getElementById('offlineHint').classList.toggle('visible', isOffline);
+  document.querySelector('.scanner-card').classList.toggle('hidden', isOffline);
+  document.getElementById('btnNewManual').classList.toggle('visible', isOffline);
+
+  // hide the API status bar in offline mode (it's only for fetch feedback)
+  const statusBar = document.getElementById('statusBar');
+  if (isOffline) statusBar.classList.add('hidden');
+  else statusBar.classList.remove('hidden');
+
+  // make barcode field editable in offline mode (typed manually off the pack)
+  const bc = document.getElementById('fBarcode');
+  if (isOffline) {
+    bc.removeAttribute('readonly');
+    bc.style.opacity = '1';
+    bc.placeholder = 'Type barcode if visible (optional)';
+  } else {
+    bc.setAttribute('readonly', '');
+    bc.style.opacity = '.6';
+    bc.placeholder = 'Barcode';
+  }
+
+  // safety: stop camera if user flips to offline mid-scan
+  if (isOffline && scannerActive) stopScanner();
+}
+
+function toggleMode() {
+  appMode = (appMode === 'online') ? 'offline' : 'online';
+  localStorage.setItem('sf_mode', appMode);
+  applyMode();
+  showToast(appMode === 'offline' ? 'Switched to OFFLINE — manual entry' : 'Switched to ONLINE — barcode lookup');
+}
+
+function startNewManualEntry() {
+  // fresh entry, not editing
+  editingIndex = null;
+  document.getElementById('formCard').classList.remove('editing');
+  document.getElementById('formCard').classList.add('visible');
+
+  const tag = document.getElementById('formModeTag');
+  tag.textContent = 'MANUAL ENTRY';
+  tag.className = 'auto-tag';
+  document.getElementById('formTitleText').textContent = 'New Product';
+  const saveBtn = document.getElementById('btnSave');
+  saveBtn.textContent = '+ SAVE PRODUCT';
+  saveBtn.classList.remove('editing');
+
+  // clear all fields
+  ['fName','fBrand','fPackSize','fCategory','fBarcode','fIngredients','fNutrition','fAdditives','fScores','fManufacturer','fMRP','fSP','fFacings','fNotes'].forEach(id => {
+    const el = document.getElementById(id);
+    el.value = '';
+    el.classList.remove('auto-filled');
+  });
+  ['fShelf','fAvail','fPromo'].forEach(id => document.getElementById(id).value = '');
+  setPrivateLabel('');
+  document.getElementById('btnSameProduct').classList.remove('visible');
+
+  setTimeout(() => {
+    document.getElementById('formCard').scrollIntoView({behavior:'smooth', block:'start'});
+    document.getElementById('fName').focus();
+  }, 100);
 }
 
 // ── PRIVATE LABEL TOGGLE ──
