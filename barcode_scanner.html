@@ -18,6 +18,8 @@
     --accent: #00ff88;
     --red: #ff4444;
     --yellow: #ffd600;
+    --blue: #00b8ff;
+    --purple: #c66bff;
   }
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -118,8 +120,11 @@
   /* FORM */
   .form-card { background:var(--panel); border:1px solid var(--border); border-radius:12px; padding:14px; margin-bottom:14px; display:none; }
   .form-card.visible { display:block; }
+  .form-card.editing { border-color:var(--blue); box-shadow:0 0 0 1px var(--blue); }
   .form-title { font-family:'IBM Plex Mono',monospace; font-size:10px; color:var(--muted); letter-spacing:2px; text-transform:uppercase; margin-bottom:14px; display:flex; align-items:center; justify-content:space-between; }
   .auto-tag { background:#0a1a0a; border:1px solid var(--green); color:var(--green); font-family:'IBM Plex Mono',monospace; font-size:9px; padding:2px 7px; border-radius:3px; letter-spacing:1px; }
+  .auto-tag.edit { background:#0a141a; border-color:var(--blue); color:var(--blue); }
+  .auto-tag.copy { background:#1a0a1a; border-color:var(--purple); color:var(--purple); }
 
   .field-group { margin-bottom:12px; }
   .field-label { display:block; font-size:11px; font-family:'IBM Plex Mono',monospace; color:var(--muted); margin-bottom:5px; letter-spacing:.5px; text-transform:uppercase; }
@@ -129,6 +134,7 @@
   .field-input::placeholder { color:var(--muted); }
   .field-input.auto-filled { border-color:var(--green); background:#0a150a; }
   .field-input[type="number"] { -moz-appearance:textfield; }
+  textarea.field-input { resize:vertical; min-height:60px; font-family:'IBM Plex Sans',sans-serif; line-height:1.4; }
   select.field-input { appearance:none; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%235a7a5a'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 12px center; }
 
   .two-col { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
@@ -136,9 +142,18 @@
   .section-label { font-size:10px; font-family:'IBM Plex Mono',monospace; color:var(--muted); letter-spacing:1.5px; text-transform:uppercase; margin-bottom:10px; display:flex; align-items:center; gap:8px; }
   .section-label::after { content:''; flex:1; height:1px; background:var(--border); }
 
+  .pl-toggle-group { display:flex; gap:8px; margin-top:5px; }
+  .pl-toggle { flex:1; background:var(--dark); border:1px solid var(--border); color:var(--muted); padding:10px; border-radius:6px; font-family:'IBM Plex Mono',monospace; font-size:12px; cursor:pointer; letter-spacing:1px; transition:all .15s; }
+  .pl-toggle:active { transform:scale(.98); }
+  .pl-toggle.active.yes { border-color:var(--yellow); background:#1a1a0a; color:var(--yellow); }
+  .pl-toggle.active.no { border-color:var(--green); background:#0a1a0a; color:var(--green); }
+  .manufacturer-wrap { margin-top:10px; display:none; }
+  .manufacturer-wrap.show { display:block; }
+
   .btn-row { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:14px; }
   .btn-save { padding:13px; background:var(--green); color:var(--dark); border:none; border-radius:8px; font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:600; cursor:pointer; letter-spacing:1px; }
   .btn-save:active { transform:scale(.97); }
+  .btn-save.editing { background:var(--blue); }
   .btn-clear { padding:13px; background:transparent; color:var(--muted); border:1px solid var(--border); border-radius:8px; font-family:'IBM Plex Mono',monospace; font-size:12px; cursor:pointer; letter-spacing:1px; }
   .btn-clear:active { border-color:var(--red); color:var(--red); }
 
@@ -153,15 +168,41 @@
   .btn-export { background:transparent; border:1px solid var(--yellow); color:var(--yellow); font-family:'IBM Plex Mono',monospace; font-size:10px; padding:5px 12px; border-radius:4px; cursor:pointer; letter-spacing:1px; }
   .btn-export:active { background:var(--yellow); color:var(--dark); }
   .records-empty { padding:28px 14px; text-align:center; color:var(--muted); font-size:13px; }
-  .record-item { padding:11px 14px; border-bottom:1px solid var(--border); display:flex; align-items:center; gap:10px; }
+
+  .record-item { padding:10px 12px; border-bottom:1px solid var(--border); display:grid; grid-template-columns:18px 1fr auto; gap:8px; align-items:center; }
   .record-item:last-child { border-bottom:none; }
-  .record-num { font-family:'IBM Plex Mono',monospace; font-size:10px; color:var(--muted); width:18px; flex-shrink:0; }
-  .record-info { flex:1; min-width:0; }
-  .record-name { font-size:13px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  .record-sub { font-size:11px; color:var(--muted); font-family:'IBM Plex Mono',monospace; margin-top:2px; }
-  .record-price { font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--accent); flex-shrink:0; }
-  .btn-del { background:none; border:none; color:var(--muted); cursor:pointer; font-size:16px; padding:2px 6px; flex-shrink:0; }
-  .btn-del:active { color:var(--red); }
+  .record-num { font-family:'IBM Plex Mono',monospace; font-size:10px; color:var(--muted); }
+  .record-info { min-width:0; }
+  .record-name { font-size:13px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; display:flex; align-items:center; gap:6px; }
+  .pl-pill { background:#1a1a0a; border:1px solid var(--yellow); color:var(--yellow); font-family:'IBM Plex Mono',monospace; font-size:8px; padding:1px 5px; border-radius:3px; letter-spacing:.5px; flex-shrink:0; }
+  .record-sub { font-size:11px; color:var(--muted); font-family:'IBM Plex Mono',monospace; margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .record-price { font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--accent); }
+  .record-actions { grid-column:1 / -1; display:flex; gap:6px; margin-top:8px; padding-top:8px; border-top:1px dashed var(--border); }
+  .act-btn { flex:1; background:transparent; border:1px solid var(--border); color:var(--muted); font-family:'IBM Plex Mono',monospace; font-size:10px; padding:6px 4px; border-radius:5px; cursor:pointer; letter-spacing:.5px; display:flex; align-items:center; justify-content:center; gap:4px; transition:all .15s; }
+  .act-btn:active { transform:scale(.95); }
+  .act-btn.view:active { border-color:var(--accent); color:var(--accent); }
+  .act-btn.edit:active { border-color:var(--blue); color:var(--blue); }
+  .act-btn.copy:active { border-color:var(--purple); color:var(--purple); }
+  .act-btn.del:active { border-color:var(--red); color:var(--red); }
+
+  /* MODAL */
+  .modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,.85); z-index:500; display:none; align-items:flex-start; justify-content:center; padding:20px 14px; overflow-y:auto; }
+  .modal-overlay.show { display:flex; }
+  .modal-card { background:var(--panel); border:1px solid var(--border); border-radius:12px; width:100%; max-width:480px; margin:auto 0; }
+  .modal-header { padding:14px; display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid var(--border); position:sticky; top:0; background:var(--panel); border-radius:12px 12px 0 0; }
+  .modal-title { font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--accent); letter-spacing:2px; text-transform:uppercase; }
+  .modal-close { background:none; border:none; color:var(--muted); font-size:24px; cursor:pointer; line-height:1; padding:0 4px; }
+  .modal-close:active { color:var(--red); }
+  .modal-body { padding:14px; }
+  .view-row { display:flex; flex-direction:column; padding:8px 0; border-bottom:1px solid var(--border); }
+  .view-row:last-child { border-bottom:none; }
+  .view-key { font-family:'IBM Plex Mono',monospace; font-size:9px; color:var(--muted); letter-spacing:1px; text-transform:uppercase; margin-bottom:3px; }
+  .view-val { font-size:13px; color:var(--text); word-break:break-word; line-height:1.4; }
+  .view-val.empty { color:var(--muted); font-style:italic; opacity:.5; }
+  .modal-actions { padding:12px 14px; display:grid; grid-template-columns:1fr 1fr; gap:8px; border-top:1px solid var(--border); }
+  .modal-actions button { padding:11px; border:none; border-radius:6px; font-family:'IBM Plex Mono',monospace; font-size:11px; font-weight:600; cursor:pointer; letter-spacing:1px; }
+  .ma-edit { background:var(--blue); color:var(--dark); }
+  .ma-copy { background:var(--purple); color:var(--dark); }
 
   .toast { position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(80px); background:var(--green); color:var(--dark); font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:600; padding:10px 20px; border-radius:20px; transition:transform .3s cubic-bezier(.34,1.56,.64,1); z-index:9999; white-space:nowrap; }
   .toast.show { transform:translateX(-50%) translateY(0); }
@@ -237,7 +278,10 @@
     </div>
 
     <div class="form-card" id="formCard">
-      <div class="form-title">Product Details <span class="auto-tag">AUTO-FILLED</span></div>
+      <div class="form-title">
+        <span id="formTitleText">Product Details</span>
+        <span class="auto-tag" id="formModeTag">AUTO-FILLED</span>
+      </div>
 
       <div class="section-label">Auto-fetched from barcode</div>
 
@@ -259,9 +303,42 @@
         <label class="field-label">Category</label>
         <input type="text" class="field-input" id="fCategory" placeholder="e.g. Sauces">
       </div>
+
+      <!-- PRIVATE LABEL -->
+      <div class="field-group">
+        <label class="field-label">Private Label?</label>
+        <div class="pl-toggle-group">
+          <button type="button" class="pl-toggle yes" id="plYes" onclick="setPrivateLabel('yes')">YES</button>
+          <button type="button" class="pl-toggle no" id="plNo" onclick="setPrivateLabel('no')">NO</button>
+        </div>
+        <div class="manufacturer-wrap" id="manufacturerWrap">
+          <label class="field-label" style="margin-top:10px">Manufacturer Name <span>*</span></label>
+          <input type="text" class="field-input" id="fManufacturer" placeholder="e.g. Mother Dairy Fruit & Veg Pvt Ltd">
+        </div>
+      </div>
+
       <div class="field-group">
         <label class="field-label">Barcode</label>
         <input type="text" class="field-input" id="fBarcode" placeholder="Barcode" readonly style="opacity:.6">
+      </div>
+
+      <div class="field-group">
+        <label class="field-label">Ingredients</label>
+        <textarea class="field-input" id="fIngredients" placeholder="Full ingredient list as printed on pack..." rows="3"></textarea>
+      </div>
+      <div class="field-group">
+        <label class="field-label">Nutrition <span style="color:var(--muted); text-transform:none; letter-spacing:0">(per 100g)</span></label>
+        <textarea class="field-input" id="fNutrition" placeholder="Energy, fat, carbs, sugars, protein, salt..." rows="3"></textarea>
+      </div>
+      <div class="two-col">
+        <div class="field-group">
+          <label class="field-label">Additives</label>
+          <input type="text" class="field-input" id="fAdditives" placeholder="e.g. E330, E412">
+        </div>
+        <div class="field-group">
+          <label class="field-label">Scores</label>
+          <input type="text" class="field-input" id="fScores" placeholder="NutriScore / NOVA / EcoScore">
+        </div>
       </div>
 
       <div class="divider"></div>
@@ -324,7 +401,7 @@
       </div>
 
       <div class="btn-row">
-        <button class="btn-save" onclick="saveRecord()">+ SAVE PRODUCT</button>
+        <button class="btn-save" id="btnSave" onclick="saveRecord()">+ SAVE PRODUCT</button>
         <button class="btn-clear" onclick="clearForm()">CLEAR</button>
       </div>
       <button class="btn-same" id="btnSameProduct" onclick="sameProductNewSize()">
@@ -345,6 +422,21 @@
   </div>
 </div>
 
+<!-- VIEW MODAL -->
+<div class="modal-overlay" id="viewModal" onclick="closeView(event)">
+  <div class="modal-card" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <div class="modal-title">Product Record</div>
+      <button class="modal-close" onclick="closeView()">&times;</button>
+    </div>
+    <div class="modal-body" id="viewBody"></div>
+    <div class="modal-actions">
+      <button class="ma-edit" onclick="editFromView()">✏ EDIT</button>
+      <button class="ma-copy" onclick="copyFromView()">⎘ COPY</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -355,6 +447,9 @@ let lastScanned = null;
 let scanCooldown = false;
 let lastSavedProduct = null;
 let selectedStore = '';
+let editingIndex = null;     // null = new record, number = editing record at that index
+let viewingIndex = null;     // currently viewed record index (for modal Edit/Copy buttons)
+let privateLabelValue = '';  // 'yes' | 'no' | ''
 
 // ── STORE PICKER ──
 function selectStore(btn, store) {
@@ -401,6 +496,15 @@ function changeStore() {
   if (scannerActive) stopScanner();
 }
 
+// ── PRIVATE LABEL TOGGLE ──
+function setPrivateLabel(val) {
+  privateLabelValue = val;
+  document.getElementById('plYes').classList.toggle('active', val === 'yes');
+  document.getElementById('plNo').classList.toggle('active', val === 'no');
+  document.getElementById('manufacturerWrap').classList.toggle('show', val === 'yes');
+  if (val !== 'yes') document.getElementById('fManufacturer').value = '';
+}
+
 // ── RECORDS ──
 function renderRecords() {
   const list = document.getElementById('recordsList');
@@ -413,13 +517,29 @@ function renderRecords() {
     <div class="record-item">
       <div class="record-num">${i+1}</div>
       <div class="record-info">
-        <div class="record-name">${r.name || 'Unknown'}</div>
-        <div class="record-sub">${[r.brand, r.pack_size, r.store].filter(Boolean).join(' · ')}</div>
+        <div class="record-name">
+          <span style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis">${escapeHtml(r.name || 'Unknown')}</span>
+          ${r.private_label === 'yes' ? '<span class="pl-pill">PL</span>' : ''}
+        </div>
+        <div class="record-sub">${[r.brand, r.pack_size, r.store].filter(Boolean).map(escapeHtml).join(' · ')}</div>
       </div>
-      ${r.mrp ? `<div class="record-price">&#8377;${r.mrp}</div>` : ''}
-      <button class="btn-del" onclick="deleteRecord(${i})">&#215;</button>
+      ${r.mrp ? `<div class="record-price">&#8377;${escapeHtml(r.mrp)}</div>` : '<div></div>'}
+      <div class="record-actions">
+        <button class="act-btn view" onclick="viewRecord(${i})">👁 VIEW</button>
+        <button class="act-btn edit" onclick="editRecord(${i})">✏ EDIT</button>
+        <button class="act-btn copy" onclick="copyRecord(${i})">⎘ COPY</button>
+        <button class="act-btn del" onclick="confirmDelete(${i})">✕ DEL</button>
+      </div>
     </div>
   `).join('');
+}
+
+function escapeHtml(s) {
+  return String(s ?? '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+}
+
+function confirmDelete(i) {
+  if (confirm('Delete "' + (records[i].name || 'this entry') + '"?')) deleteRecord(i);
 }
 
 function deleteRecord(i) {
@@ -429,6 +549,132 @@ function deleteRecord(i) {
   showToast('Removed');
 }
 
+// ── VIEW / EDIT / COPY ──
+const FIELD_LABELS = [
+  ['name','Product Name'],
+  ['brand','Brand'],
+  ['pack_size','Pack Size'],
+  ['category','Category'],
+  ['private_label','Private Label'],
+  ['manufacturer','Manufacturer'],
+  ['barcode','Barcode'],
+  ['ingredients','Ingredients'],
+  ['nutrition','Nutrition'],
+  ['additives','Additives'],
+  ['scores','Scores'],
+  ['mrp','MRP (₹)'],
+  ['selling_price','Selling Price (₹)'],
+  ['shelf_position','Shelf Position'],
+  ['facings','Facings'],
+  ['store','Store'],
+  ['availability','Availability'],
+  ['promo','Promo'],
+  ['notes','Notes'],
+  ['timestamp','Saved At']
+];
+
+function viewRecord(i) {
+  const r = records[i];
+  if (!r) return;
+  viewingIndex = i;
+  const body = document.getElementById('viewBody');
+  body.innerHTML = FIELD_LABELS.map(([key, label]) => {
+    let val = r[key];
+    if (key === 'private_label') val = val === 'yes' ? 'Yes' : (val === 'no' ? 'No' : '');
+    if (key === 'mrp' && val) val = '₹' + val;
+    if (key === 'selling_price' && val) val = '₹' + val;
+    const empty = !val;
+    return `
+      <div class="view-row">
+        <div class="view-key">${label}</div>
+        <div class="view-val ${empty ? 'empty' : ''}">${empty ? '—' : escapeHtml(val).replace(/\n/g,'<br>')}</div>
+      </div>`;
+  }).join('');
+  document.getElementById('viewModal').classList.add('show');
+}
+
+function closeView(e) {
+  if (e && e.target.id !== 'viewModal' && e.target.className !== 'modal-close') return;
+  document.getElementById('viewModal').classList.remove('show');
+  viewingIndex = null;
+}
+
+function editFromView() {
+  if (viewingIndex === null) return;
+  const idx = viewingIndex;
+  document.getElementById('viewModal').classList.remove('show');
+  viewingIndex = null;
+  editRecord(idx);
+}
+
+function copyFromView() {
+  if (viewingIndex === null) return;
+  const idx = viewingIndex;
+  document.getElementById('viewModal').classList.remove('show');
+  viewingIndex = null;
+  copyRecord(idx);
+}
+
+function loadIntoForm(r) {
+  document.getElementById('formCard').classList.add('visible');
+  document.getElementById('fName').value          = r.name || '';
+  document.getElementById('fBrand').value         = r.brand || '';
+  document.getElementById('fPackSize').value      = r.pack_size || '';
+  document.getElementById('fCategory').value      = r.category || '';
+  document.getElementById('fBarcode').value       = r.barcode || '';
+  document.getElementById('fIngredients').value   = r.ingredients || '';
+  document.getElementById('fNutrition').value     = r.nutrition || '';
+  document.getElementById('fAdditives').value     = r.additives || '';
+  document.getElementById('fScores').value        = r.scores || '';
+  document.getElementById('fMRP').value           = r.mrp || '';
+  document.getElementById('fSP').value            = r.selling_price || '';
+  document.getElementById('fShelf').value         = r.shelf_position || '';
+  document.getElementById('fFacings').value       = r.facings || '';
+  document.getElementById('fAvail').value         = r.availability || '';
+  document.getElementById('fPromo').value         = r.promo || '';
+  document.getElementById('fNotes').value         = r.notes || '';
+  document.getElementById('fManufacturer').value  = r.manufacturer || '';
+  setPrivateLabel(r.private_label || '');
+  // remove autofill highlight (these are user-loaded, not auto-fetched)
+  document.querySelectorAll('.field-input.auto-filled').forEach(el => el.classList.remove('auto-filled'));
+  document.getElementById('btnSameProduct').classList.remove('visible');
+}
+
+function editRecord(i) {
+  const r = records[i];
+  if (!r) return;
+  editingIndex = i;
+  loadIntoForm(r);
+  // visual cue: editing mode
+  document.getElementById('formCard').classList.add('editing');
+  const tag = document.getElementById('formModeTag');
+  tag.textContent = 'EDITING #' + (i+1);
+  tag.className = 'auto-tag edit';
+  document.getElementById('formTitleText').textContent = 'Edit Product';
+  const btn = document.getElementById('btnSave');
+  btn.textContent = '✓ UPDATE PRODUCT';
+  btn.classList.add('editing');
+  setTimeout(() => document.getElementById('formCard').scrollIntoView({behavior:'smooth', block:'start'}), 100);
+  showToast('Editing entry #' + (i+1));
+}
+
+function copyRecord(i) {
+  const r = records[i];
+  if (!r) return;
+  editingIndex = null;  // copy creates a NEW record
+  loadIntoForm(r);
+  document.getElementById('formCard').classList.remove('editing');
+  const tag = document.getElementById('formModeTag');
+  tag.textContent = 'COPIED FROM #' + (i+1);
+  tag.className = 'auto-tag copy';
+  document.getElementById('formTitleText').textContent = 'New Product (copy)';
+  const btn = document.getElementById('btnSave');
+  btn.textContent = '+ SAVE AS NEW';
+  btn.classList.remove('editing');
+  setTimeout(() => document.getElementById('formCard').scrollIntoView({behavior:'smooth', block:'start'}), 100);
+  showToast('Copied — change anything you need, then save');
+}
+
 // ── STATUS ──
 function showStatus(type, msg) {
   const bar = document.getElementById('statusBar');
@@ -436,6 +682,39 @@ function showStatus(type, msg) {
   document.getElementById('statusSpinner').style.display = type === 'loading' ? 'block' : 'none';
   document.getElementById('statusText').textContent = msg;
   if (type !== 'loading') setTimeout(() => { bar.className = 'status-bar'; }, 3000);
+}
+
+// ── FORMATTERS for autofill ──
+function formatNutrition(n) {
+  if (!n) return '';
+  const map = [
+    ['energy-kcal_100g', 'Energy', 'kcal'],
+    ['fat_100g', 'Fat', 'g'],
+    ['saturated-fat_100g', 'Sat Fat', 'g'],
+    ['carbohydrates_100g', 'Carbs', 'g'],
+    ['sugars_100g', 'Sugars', 'g'],
+    ['fiber_100g', 'Fiber', 'g'],
+    ['proteins_100g', 'Protein', 'g'],
+    ['salt_100g', 'Salt', 'g'],
+    ['sodium_100g', 'Sodium', 'g']
+  ];
+  const items = map
+    .filter(([k]) => n[k] !== undefined && n[k] !== null && n[k] !== '')
+    .map(([k, label, unit]) => `${label}: ${n[k]}${unit}`);
+  return items.join(', ');
+}
+
+function formatAdditives(tags) {
+  if (!tags || !tags.length) return '';
+  return tags.map(t => String(t).replace(/^en:/, '').toUpperCase()).join(', ');
+}
+
+function formatScores(p) {
+  const parts = [];
+  if (p.nutriscore_grade) parts.push('NutriScore: ' + String(p.nutriscore_grade).toUpperCase());
+  if (p.nova_group) parts.push('NOVA: ' + p.nova_group);
+  if (p.ecoscore_grade) parts.push('EcoScore: ' + String(p.ecoscore_grade).toUpperCase());
+  return parts.join(' | ');
 }
 
 // ── FETCH ──
@@ -455,11 +734,14 @@ async function fetchProduct(barcode) {
     const p = data.product;
     showStatus('success', 'Product data loaded');
     populateForm(barcode, {
-      name: p.product_name || '',
-      brand: p.brands || '',
-      pack_size: p.quantity || '',
-      category: p.categories ? p.categories.split(',')[0].trim() : '',
-      notes: [p.nutriscore_grade ? 'NutriScore: ' + p.nutriscore_grade.toUpperCase() : '', p.nova_group ? 'NOVA: ' + p.nova_group : ''].filter(Boolean).join(', ')
+      name:        p.product_name || '',
+      brand:       p.brands || '',
+      pack_size:   p.quantity || '',
+      category:    p.categories ? p.categories.split(',')[0].trim() : '',
+      ingredients: p.ingredients_text || p.ingredients_text_en || '',
+      nutrition:   formatNutrition(p.nutriments),
+      additives:   formatAdditives(p.additives_tags),
+      scores:      formatScores(p)
     });
   } catch(e) {
     showStatus('error', 'Fetch failed — fill manually');
@@ -468,18 +750,36 @@ async function fetchProduct(barcode) {
 }
 
 function populateForm(barcode, data) {
+  // reset edit/copy mode — this is a fresh scan
+  editingIndex = null;
+  document.getElementById('formCard').classList.remove('editing');
+  const tag = document.getElementById('formModeTag');
+  tag.textContent = 'AUTO-FILLED';
+  tag.className = 'auto-tag';
+  document.getElementById('formTitleText').textContent = 'Product Details';
+  const saveBtn = document.getElementById('btnSave');
+  saveBtn.textContent = '+ SAVE PRODUCT';
+  saveBtn.classList.remove('editing');
+
   document.getElementById('formCard').classList.add('visible');
   document.getElementById('fBarcode').value = barcode;
   document.getElementById('btnSameProduct').classList.remove('visible');
 
-  const fields = ['fName','fBrand','fPackSize','fCategory','fNotes'];
-  const keys   = ['name', 'brand', 'pack_size', 'category', 'notes'];
+  // reset private label
+  setPrivateLabel('');
+
+  const fields = ['fName','fBrand','fPackSize','fCategory','fIngredients','fNutrition','fAdditives','fScores'];
+  const keys   = ['name', 'brand', 'pack_size', 'category', 'ingredients', 'nutrition', 'additives', 'scores'];
 
   fields.forEach((id, i) => {
     const el = document.getElementById(id);
     if (data && data[keys[i]]) { el.value = data[keys[i]]; el.classList.add('auto-filled'); }
     else { el.value = ''; el.classList.remove('auto-filled'); }
   });
+
+  // clear notes (was being filled with scores before — now scores has its own field)
+  document.getElementById('fNotes').value = '';
+  document.getElementById('fNotes').classList.remove('auto-filled');
 
   ['fMRP','fSP','fShelf','fFacings','fAvail','fPromo'].forEach(id => {
     const el = document.getElementById(id);
@@ -491,8 +791,10 @@ function populateForm(barcode, data) {
 }
 
 function clearForm() {
-  document.getElementById('formCard').classList.remove('visible');
+  document.getElementById('formCard').classList.remove('visible', 'editing');
   document.getElementById('btnSameProduct').classList.remove('visible');
+  setPrivateLabel('');
+  editingIndex = null;
   lastScanned = null;
   lastSavedProduct = null;
 }
@@ -501,6 +803,9 @@ function clearForm() {
 function saveRecord() {
   const name = document.getElementById('fName').value.trim();
   if (!name) { showToast('Product name required!'); return; }
+  if (privateLabelValue === 'yes' && !document.getElementById('fManufacturer').value.trim()) {
+    showToast('Manufacturer name required for private label!'); return;
+  }
 
   const record = {
     barcode:        document.getElementById('fBarcode').value,
@@ -508,6 +813,12 @@ function saveRecord() {
     brand:          document.getElementById('fBrand').value,
     pack_size:      document.getElementById('fPackSize').value,
     category:       document.getElementById('fCategory').value,
+    private_label:  privateLabelValue,
+    manufacturer:   document.getElementById('fManufacturer').value,
+    ingredients:    document.getElementById('fIngredients').value,
+    nutrition:      document.getElementById('fNutrition').value,
+    additives:      document.getElementById('fAdditives').value,
+    scores:         document.getElementById('fScores').value,
     mrp:            document.getElementById('fMRP').value,
     selling_price:  document.getElementById('fSP').value,
     shelf_position: document.getElementById('fShelf').value,
@@ -519,27 +830,63 @@ function saveRecord() {
     timestamp:      new Date().toLocaleString('en-IN')
   };
 
+  if (editingIndex !== null) {
+    // preserve original timestamp, add updated timestamp
+    record.timestamp = records[editingIndex].timestamp;
+    record.updated_at = new Date().toLocaleString('en-IN');
+    records[editingIndex] = record;
+    localStorage.setItem('sf_records', JSON.stringify(records));
+    renderRecords();
+    showToast('Entry #' + (editingIndex + 1) + ' updated!');
+    editingIndex = null;
+    // reset form mode
+    document.getElementById('formCard').classList.remove('editing');
+    const tag = document.getElementById('formModeTag');
+    tag.textContent = 'AUTO-FILLED';
+    tag.className = 'auto-tag';
+    document.getElementById('formTitleText').textContent = 'Product Details';
+    const btn = document.getElementById('btnSave');
+    btn.textContent = '+ SAVE PRODUCT';
+    btn.classList.remove('editing');
+    document.getElementById('formCard').classList.remove('visible');
+    return;
+  }
+
   records.push(record);
   localStorage.setItem('sf_records', JSON.stringify(records));
   lastSavedProduct = record;
   renderRecords();
   showToast('Product saved!');
 
-  // Show "same product" button after saving
   document.getElementById('btnSameProduct').classList.add('visible');
 
   // Clear only variable fields, keep product info visible
   ['fMRP','fSP','fFacings','fAvail','fPromo'].forEach(id => document.getElementById(id).value = '');
   document.getElementById('fShelf').value = '';
   document.getElementById('fNotes').value = '';
+
+  // reset save button label in case it was "+ SAVE AS NEW" from copy
+  const btn = document.getElementById('btnSave');
+  btn.textContent = '+ SAVE PRODUCT';
+  const tag = document.getElementById('formModeTag');
+  tag.textContent = 'AUTO-FILLED';
+  tag.className = 'auto-tag';
+  document.getElementById('formTitleText').textContent = 'Product Details';
 }
 
 // ── SAME PRODUCT NEW SIZE ──
 function sameProductNewSize() {
   if (!lastSavedProduct) return;
-  document.getElementById('fName').value     = lastSavedProduct.name;
-  document.getElementById('fBrand').value    = lastSavedProduct.brand;
-  document.getElementById('fCategory').value = lastSavedProduct.category;
+  document.getElementById('fName').value         = lastSavedProduct.name;
+  document.getElementById('fBrand').value        = lastSavedProduct.brand;
+  document.getElementById('fCategory').value     = lastSavedProduct.category;
+  document.getElementById('fIngredients').value  = lastSavedProduct.ingredients || '';
+  document.getElementById('fNutrition').value    = lastSavedProduct.nutrition || '';
+  document.getElementById('fAdditives').value    = lastSavedProduct.additives || '';
+  document.getElementById('fScores').value       = lastSavedProduct.scores || '';
+  document.getElementById('fManufacturer').value = lastSavedProduct.manufacturer || '';
+  setPrivateLabel(lastSavedProduct.private_label || '');
+
   document.getElementById('fPackSize').value = '';
   document.getElementById('fBarcode').value  = '';
   document.getElementById('fNotes').value    = '';
@@ -547,7 +894,8 @@ function sameProductNewSize() {
   ['fMRP','fSP','fFacings','fAvail','fPromo'].forEach(id => document.getElementById(id).value = '');
   document.getElementById('fShelf').value = '';
 
-  ['fName','fBrand','fCategory'].forEach(id => document.getElementById(id).classList.add('auto-filled'));
+  ['fName','fBrand','fCategory','fIngredients','fNutrition','fAdditives','fScores'].forEach(id =>
+    document.getElementById(id).classList.add('auto-filled'));
   ['fPackSize','fBarcode'].forEach(id => document.getElementById(id).classList.remove('auto-filled'));
 
   document.getElementById('btnSameProduct').classList.remove('visible');
@@ -558,9 +906,9 @@ function sameProductNewSize() {
 // ── EXPORT ──
 function exportCSV() {
   if (!records.length) { showToast('No records to export'); return; }
-  const headers = ['Barcode','Product Name','Brand','Pack Size','Category','MRP','Selling Price','Shelf Position','Facings','Store','Availability','Promo','Notes','Timestamp'];
-  const keys    = ['barcode','name','brand','pack_size','category','mrp','selling_price','shelf_position','facings','store','availability','promo','notes','timestamp'];
-  const csv = [headers.join(','), ...records.map(r => keys.map(k => `"${(r[k]||'').replace(/"/g,'""')}"`).join(','))].join('\n');
+  const headers = ['Barcode','Product Name','Brand','Pack Size','Category','Private Label','Manufacturer','Ingredients','Nutrition','Additives','Scores','MRP','Selling Price','Shelf Position','Facings','Store','Availability','Promo','Notes','Timestamp','Updated At'];
+  const keys    = ['barcode','name','brand','pack_size','category','private_label','manufacturer','ingredients','nutrition','additives','scores','mrp','selling_price','shelf_position','facings','store','availability','promo','notes','timestamp','updated_at'];
+  const csv = [headers.join(','), ...records.map(r => keys.map(k => `"${String(r[k] || '').replace(/"/g,'""').replace(/\n/g,' ')}"`).join(','))].join('\n');
   const a = Object.assign(document.createElement('a'), {
     href: URL.createObjectURL(new Blob([csv], {type:'text/csv'})),
     download: 'SF_Scan_' + currentStore.replace(/\s+/g,'_') + '_' + new Date().toISOString().slice(0,10) + '.csv'
