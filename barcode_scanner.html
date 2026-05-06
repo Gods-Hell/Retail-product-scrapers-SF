@@ -125,6 +125,7 @@
   .auto-tag { background:#0a1a0a; border:1px solid var(--green); color:var(--green); font-family:'IBM Plex Mono',monospace; font-size:9px; padding:2px 7px; border-radius:3px; letter-spacing:1px; }
   .auto-tag.edit { background:#0a141a; border-color:var(--blue); color:var(--blue); }
   .auto-tag.copy { background:#1a0a1a; border-color:var(--purple); color:var(--purple); }
+  .auto-tag.upc { background:#1a1408; border-color:var(--yellow); color:var(--yellow); }
 
   .field-group { margin-bottom:12px; }
   .field-label { display:block; font-size:11px; font-family:'IBM Plex Mono',monospace; color:var(--muted); margin-bottom:5px; letter-spacing:.5px; text-transform:uppercase; }
@@ -133,6 +134,7 @@
   .field-input:focus { border-color:var(--accent); }
   .field-input::placeholder { color:var(--muted); }
   .field-input.auto-filled { border-color:var(--green); background:#0a150a; }
+  .field-input.auto-filled-upc { border-color:var(--yellow); background:#1a1408; }
   .field-input[type="number"] { -moz-appearance:textfield; }
   textarea.field-input { resize:vertical; min-height:60px; font-family:'IBM Plex Sans',sans-serif; line-height:1.4; }
   select.field-input { appearance:none; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%235a7a5a'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 12px center; }
@@ -160,6 +162,13 @@
   .btn-same { width:100%; margin-top:10px; padding:12px; background:transparent; color:var(--yellow); border:1px solid var(--yellow); border-radius:8px; font-family:'IBM Plex Mono',monospace; font-size:11px; cursor:pointer; letter-spacing:1px; display:none; }
   .btn-same.visible { display:block; }
   .btn-same:active { background:var(--yellow); color:var(--dark); }
+
+  /* SEARCH FALLBACK (when both APIs miss) */
+  .search-fallback { background:#1a1408; border:1px solid var(--yellow); border-radius:8px; padding:12px; margin-bottom:14px; }
+  .search-fallback-label { font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--yellow); margin-bottom:8px; letter-spacing:.5px; text-align:center; }
+  .search-fallback-buttons { display:flex; gap:6px; }
+  .search-fallback-buttons button { flex:1; background:transparent; color:var(--yellow); border:1px solid var(--yellow); padding:9px 4px; border-radius:6px; font-family:'IBM Plex Mono',monospace; font-size:10px; font-weight:600; cursor:pointer; letter-spacing:.5px; }
+  .search-fallback-buttons button:active { background:var(--yellow); color:var(--dark); transform:scale(.97); }
 
   /* RECORDS */
   .records-card { background:var(--panel); border:1px solid var(--border); border-radius:12px; overflow:hidden; margin-bottom:14px; }
@@ -569,6 +578,7 @@ function startNewManualEntry() {
   editingIndex = null;
   document.getElementById('formCard').classList.remove('editing');
   document.getElementById('formCard').classList.add('visible');
+  removeSearchFallback();
 
   const tag = document.getElementById('formModeTag');
   tag.textContent = 'MANUAL ENTRY';
@@ -582,7 +592,7 @@ function startNewManualEntry() {
   ['fName','fBrand','fPackSize','fCategory','fBarcode','fIngredients','fNutrition','fAdditives','fScores','fManufacturer','fMRP','fSP','fFacings','fNotes'].forEach(id => {
     const el = document.getElementById(id);
     el.value = '';
-    el.classList.remove('auto-filled');
+    el.classList.remove('auto-filled', 'auto-filled-upc');
   });
   ['fShelf','fAvail','fPromo'].forEach(id => document.getElementById(id).value = '');
   setPrivateLabel('');
@@ -667,6 +677,7 @@ const FIELD_LABELS = [
   ['store','Store'],
   ['availability','Availability'],
   ['promo','Promo'],
+  ['source','Data Source'],
   ['notes','Notes'],
   ['timestamp','Saved At']
 ];
@@ -681,6 +692,9 @@ function viewRecord(i) {
     if (key === 'private_label') val = val === 'yes' ? 'Yes' : (val === 'no' ? 'No' : '');
     if (key === 'mrp' && val) val = '₹' + val;
     if (key === 'selling_price' && val) val = '₹' + val;
+    if (key === 'source') {
+      val = val === 'off' ? 'Open Food Facts' : val === 'upc' ? 'UPCItemDB (verify brand)' : val === 'manual' ? 'Manual entry' : '';
+    }
     const empty = !val;
     return `
       <div class="view-row">
@@ -715,6 +729,7 @@ function copyFromView() {
 
 function loadIntoForm(r) {
   document.getElementById('formCard').classList.add('visible');
+  removeSearchFallback();
   document.getElementById('fName').value          = r.name || '';
   document.getElementById('fBrand').value         = r.brand || '';
   document.getElementById('fPackSize').value      = r.pack_size || '';
@@ -734,7 +749,8 @@ function loadIntoForm(r) {
   document.getElementById('fManufacturer').value  = r.manufacturer || '';
   setPrivateLabel(r.private_label || '');
   // remove autofill highlight (these are user-loaded, not auto-fetched)
-  document.querySelectorAll('.field-input.auto-filled').forEach(el => el.classList.remove('auto-filled'));
+  document.querySelectorAll('.field-input.auto-filled, .field-input.auto-filled-upc').forEach(el =>
+    el.classList.remove('auto-filled', 'auto-filled-upc'));
   document.getElementById('btnSameProduct').classList.remove('visible');
 }
 
@@ -815,49 +831,168 @@ function formatScores(p) {
   return parts.join(' | ');
 }
 
-// ── FETCH ──
+// ── UPCITEMDB FALLBACK PARSER ──
+// UPCItemDB often crams brand+name+size into the 'title' field.
+// 'Ching\'s Secret, Schezwan Chutney, 250 Grams(gm)'
+//   → name='Schezwan Chutney', brand="Ching's Secret", size='250 Grams(gm)'
+const SIZE_RE = /\b(\d+(?:\.\d+)?)\s*(grams?|gms?|g|kilograms?|kgs?|kg|millilit(?:re|er)s?|ml|litres?|liters?|l|ounces?|oz|pounds?|lbs?|lb|pieces?|pcs?|count|ct)\b(\s*\([^)]+\))?/i;
+
+function parseUPCItemDBTitle(title, brand = '', size = '') {
+  let name = (title || '').trim();
+  brand = (brand || '').trim();
+  size = (size || '').trim();
+
+  // 1. Pull size out of the title
+  if (!size) {
+    const m = name.match(SIZE_RE);
+    if (m) {
+      size = m[0].trim();
+      name = name.replace(SIZE_RE, '').trim();
+    }
+  }
+
+  // 2. Split brand from name on commas
+  if (!brand && name.includes(',')) {
+    const parts = name.split(',').map(p => p.trim()).filter(Boolean);
+    if (parts.length >= 2) {
+      brand = parts[0];
+      name = parts.slice(1).join(', ');
+    }
+  }
+
+  // 3. Tidy
+  name  = name.replace(/\s+/g, ' ').replace(/^[,\s]+|[,\s]+$/g, '');
+  brand = brand.replace(/^[,\s]+|[,\s]+$/g, '');
+  size  = size.replace(/^[,\s]+|[,\s]+$/g, '');
+
+  return { name, brand, size };
+}
+
+async function lookupUPCItemDB(barcode) {
+  try {
+    const res = await fetch(`https://api.upcitemdb.com/prod/trial/lookup?upc=${barcode}`);
+    if (res.status === 429) return { _error: 'Rate limited (100/day cap)' };
+    if (!res.ok) return { _error: 'HTTP ' + res.status };
+    const data = await res.json();
+    if (!data.items || !data.items.length) return null;
+    const item = data.items[0];
+    const parsed = parseUPCItemDBTitle(item.title || '', item.brand || '', item.size || '');
+    return {
+      name:        parsed.name,
+      brand:       parsed.brand,
+      pack_size:   parsed.size,
+      category:    item.category || '',
+      ingredients: '',
+      nutrition:   '',
+      additives:   '',
+      scores:      ''
+    };
+  } catch (e) {
+    return { _error: e.message || 'Network error' };
+  }
+}
+
+// ── SEARCH FALLBACK (when both APIs miss) ──
+function showSearchFallback(barcode) {
+  removeSearchFallback();
+  const formCard = document.getElementById('formCard');
+  formCard.classList.add('visible');
+  const div = document.createElement('div');
+  div.id = 'searchFallback';
+  div.className = 'search-fallback';
+  div.innerHTML = `
+    <div class="search-fallback-label">Not in any DB — search this barcode online</div>
+    <div class="search-fallback-buttons">
+      <button type="button" onclick="window.open('https://www.google.com/search?q=${encodeURIComponent(barcode)}+product','_blank')">🔍 GOOGLE</button>
+      <button type="button" onclick="window.open('https://www.google.com/search?tbm=shop&q=${encodeURIComponent(barcode)}','_blank')">🛒 SHOPPING</button>
+      <button type="button" onclick="window.open('https://lens.google.com/','_blank')">📷 LENS</button>
+    </div>
+  `;
+  // Insert right after the form title
+  const title = formCard.querySelector('.form-title');
+  if (title && title.nextSibling) {
+    formCard.insertBefore(div, title.nextSibling);
+  } else {
+    formCard.appendChild(div);
+  }
+}
+
+function removeSearchFallback() {
+  const el = document.getElementById('searchFallback');
+  if (el) el.remove();
+}
+
+// ── FETCH (with fallback chain: OFF → UPCItemDB → Google search) ──
 async function fetchProduct(barcode) {
-  showStatus('loading', 'Fetching product data...');
+  showStatus('loading', 'Fetching from Open Food Facts...');
+
+  // 1. Try Open Food Facts (richer data, food-focused)
   try {
     const res = await fetch(`https://world.openfoodfacts.org/api/v0/product/${barcode}.json`, {
       headers: { 'User-Agent': 'SFScanner/1.0' }
     });
-    if (!res.ok) throw new Error('HTTP ' + res.status);
-    const data = await res.json();
-    if (data.status !== 1) {
-      showStatus('error', 'Product not found — fill manually');
-      populateForm(barcode, null);
-      return;
+    if (res.ok) {
+      const data = await res.json();
+      if (data.status === 1) {
+        const p = data.product;
+        showStatus('success', 'Loaded from Open Food Facts');
+        populateForm(barcode, {
+          name:        p.product_name || '',
+          brand:       p.brands || '',
+          pack_size:   p.quantity || '',
+          category:    p.categories ? p.categories.split(',')[0].trim() : '',
+          ingredients: p.ingredients_text || p.ingredients_text_en || '',
+          nutrition:   formatNutrition(p.nutriments),
+          additives:   formatAdditives(p.additives_tags),
+          scores:      formatScores(p)
+        }, 'off');
+        return;
+      }
     }
-    const p = data.product;
-    showStatus('success', 'Product data loaded');
-    populateForm(barcode, {
-      name:        p.product_name || '',
-      brand:       p.brands || '',
-      pack_size:   p.quantity || '',
-      category:    p.categories ? p.categories.split(',')[0].trim() : '',
-      ingredients: p.ingredients_text || p.ingredients_text_en || '',
-      nutrition:   formatNutrition(p.nutriments),
-      additives:   formatAdditives(p.additives_tags),
-      scores:      formatScores(p)
-    });
-  } catch(e) {
-    showStatus('error', 'Fetch failed — fill manually');
-    populateForm(barcode, null);
+  } catch(e) { /* fall through to UPCItemDB */ }
+
+  // 2. Fallback: UPCItemDB (broader brand coverage incl. non-food)
+  showStatus('loading', 'Not in OFF — trying UPCItemDB...');
+  const upc = await lookupUPCItemDB(barcode);
+  if (upc && !upc._error) {
+    showStatus('success', 'Loaded from UPCItemDB · verify brand & name');
+    populateForm(barcode, upc, 'upc');
+    return;
   }
+
+  // 3. Both APIs missed — offer Google search shortcuts
+  const errSuffix = upc && upc._error ? ` (${upc._error})` : '';
+  showStatus('error', 'Not found in either DB' + errSuffix);
+  populateForm(barcode, null);
+  showSearchFallback(barcode);
 }
 
-function populateForm(barcode, data) {
+function populateForm(barcode, data, source = '') {
   // reset edit/copy mode — this is a fresh scan
   editingIndex = null;
   document.getElementById('formCard').classList.remove('editing');
+  removeSearchFallback();
+
+  // Set the source tag based on origin
   const tag = document.getElementById('formModeTag');
-  tag.textContent = 'AUTO-FILLED';
-  tag.className = 'auto-tag';
+  if (source === 'upc') {
+    tag.textContent = 'AUTO · UPCITEMDB';
+    tag.className = 'auto-tag upc';
+  } else if (source === 'off') {
+    tag.textContent = 'AUTO · OPEN FOOD FACTS';
+    tag.className = 'auto-tag';
+  } else {
+    tag.textContent = data ? 'AUTO-FILLED' : 'MANUAL ENTRY';
+    tag.className = 'auto-tag';
+  }
   document.getElementById('formTitleText').textContent = 'Product Details';
+
   const saveBtn = document.getElementById('btnSave');
   saveBtn.textContent = '+ SAVE PRODUCT';
   saveBtn.classList.remove('editing');
+
+  // Stash source so saveRecord() can persist it
+  document.getElementById('formCard').dataset.source = source;
 
   document.getElementById('formCard').classList.add('visible');
   document.getElementById('fBarcode').value = barcode;
@@ -869,20 +1004,28 @@ function populateForm(barcode, data) {
   const fields = ['fName','fBrand','fPackSize','fCategory','fIngredients','fNutrition','fAdditives','fScores'];
   const keys   = ['name', 'brand', 'pack_size', 'category', 'ingredients', 'nutrition', 'additives', 'scores'];
 
+  // UPCItemDB fills get yellow highlight (verify-me cue), OFF fills get green
+  const highlightClass = source === 'upc' ? 'auto-filled-upc' : 'auto-filled';
+
   fields.forEach((id, i) => {
     const el = document.getElementById(id);
-    if (data && data[keys[i]]) { el.value = data[keys[i]]; el.classList.add('auto-filled'); }
-    else { el.value = ''; el.classList.remove('auto-filled'); }
+    el.classList.remove('auto-filled', 'auto-filled-upc');
+    if (data && data[keys[i]]) {
+      el.value = data[keys[i]];
+      el.classList.add(highlightClass);
+    } else {
+      el.value = '';
+    }
   });
 
-  // clear notes (was being filled with scores before — now scores has its own field)
+  // clear notes
   document.getElementById('fNotes').value = '';
-  document.getElementById('fNotes').classList.remove('auto-filled');
+  document.getElementById('fNotes').classList.remove('auto-filled', 'auto-filled-upc');
 
   ['fMRP','fSP','fShelf','fFacings','fAvail','fPromo'].forEach(id => {
     const el = document.getElementById(id);
     el.value = '';
-    el.classList.remove('auto-filled');
+    el.classList.remove('auto-filled', 'auto-filled-upc');
   });
 
   setTimeout(() => document.getElementById('formCard').scrollIntoView({ behavior:'smooth', block:'start' }), 100);
@@ -891,6 +1034,7 @@ function populateForm(barcode, data) {
 function clearForm() {
   document.getElementById('formCard').classList.remove('visible', 'editing');
   document.getElementById('btnSameProduct').classList.remove('visible');
+  removeSearchFallback();
   setPrivateLabel('');
   editingIndex = null;
   lastScanned = null;
@@ -904,6 +1048,8 @@ function saveRecord() {
   if (privateLabelValue === 'yes' && !document.getElementById('fManufacturer').value.trim()) {
     showToast('Manufacturer name required for private label!'); return;
   }
+
+  const source = document.getElementById('formCard').dataset.source || 'manual';
 
   const record = {
     barcode:        document.getElementById('fBarcode').value,
@@ -924,13 +1070,15 @@ function saveRecord() {
     store:          currentStore,
     availability:   document.getElementById('fAvail').value,
     promo:          document.getElementById('fPromo').value,
+    source:         source,
     notes:          document.getElementById('fNotes').value,
     timestamp:      new Date().toLocaleString('en-IN')
   };
 
   if (editingIndex !== null) {
-    // preserve original timestamp, add updated timestamp
+    // preserve original timestamp & source, add updated timestamp
     record.timestamp = records[editingIndex].timestamp;
+    record.source = records[editingIndex].source || source;
     record.updated_at = new Date().toLocaleString('en-IN');
     records[editingIndex] = record;
     localStorage.setItem('sf_records', JSON.stringify(records));
@@ -994,7 +1142,7 @@ function sameProductNewSize() {
 
   ['fName','fBrand','fCategory','fIngredients','fNutrition','fAdditives','fScores'].forEach(id =>
     document.getElementById(id).classList.add('auto-filled'));
-  ['fPackSize','fBarcode'].forEach(id => document.getElementById(id).classList.remove('auto-filled'));
+  ['fPackSize','fBarcode'].forEach(id => document.getElementById(id).classList.remove('auto-filled', 'auto-filled-upc'));
 
   document.getElementById('btnSameProduct').classList.remove('visible');
   showToast('Details carried over — enter new size & price');
@@ -1004,8 +1152,8 @@ function sameProductNewSize() {
 // ── EXPORT ──
 function exportCSV() {
   if (!records.length) { showToast('No records to export'); return; }
-  const headers = ['Barcode','Product Name','Brand','Pack Size','Category','Private Label','Manufacturer','Ingredients','Nutrition','Additives','Scores','MRP','Selling Price','Shelf Position','Facings','Store','Availability','Promo','Notes','Timestamp','Updated At'];
-  const keys    = ['barcode','name','brand','pack_size','category','private_label','manufacturer','ingredients','nutrition','additives','scores','mrp','selling_price','shelf_position','facings','store','availability','promo','notes','timestamp','updated_at'];
+  const headers = ['Barcode','Product Name','Brand','Pack Size','Category','Private Label','Manufacturer','Ingredients','Nutrition','Additives','Scores','MRP','Selling Price','Shelf Position','Facings','Store','Availability','Promo','Source','Notes','Timestamp','Updated At'];
+  const keys    = ['barcode','name','brand','pack_size','category','private_label','manufacturer','ingredients','nutrition','additives','scores','mrp','selling_price','shelf_position','facings','store','availability','promo','source','notes','timestamp','updated_at'];
   const csv = [headers.join(','), ...records.map(r => keys.map(k => `"${String(r[k] || '').replace(/"/g,'""').replace(/\n/g,' ')}"`).join(','))].join('\n');
   const a = Object.assign(document.createElement('a'), {
     href: URL.createObjectURL(new Blob([csv], {type:'text/csv'})),
