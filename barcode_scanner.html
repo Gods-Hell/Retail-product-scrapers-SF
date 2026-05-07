@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>SF Product Scanner - with Shelf Rows</title>
+<title>SF Product Scanner - with Shelf Rows & Dynamic Position</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@300;400;600&display=swap');
@@ -407,14 +407,7 @@ select.field-input { appearance:none; background-image:url("data:image/svg+xml,%
 <div class="field-group">
 <label class="field-label">Shelf Position</label>
 <select class="field-input" id="fShelf">
-<option value="">Select...</option>
-<option>Eye Level</option>
-<option>Top Shelf</option>
-<option>Middle Shelf</option>
-<option>Bottom Shelf</option>
-<option>Floor Stack</option>
-<option>Gondola End</option>
-<option>Checkout</option>
+<!-- options will be filled dynamically by JavaScript -->
 </select>
 </div>
 <div class="field-group">
@@ -540,7 +533,7 @@ function getRowPosition(rowNum, totalRows) {
         const map7 = {1:'Top Shelf', 2:'Upper-Top Shelf', 3:'Upper-Mid Shelf', 4:'Eye-Level Shelf', 5:'Mid-Lower Shelf', 6:'Lower Shelf', 7:'Bottom Shelf'};
         return map7[r] || `Row ${r}`;
     } else {
-        // generic: first = Top, last = Bottom, approximate middle = Eye level
+        // generic
         if (r === 1) return 'Top Shelf';
         if (r === t) return 'Bottom Shelf';
         if (r === Math.floor(t/2) || r === Math.ceil(t/2)) return 'Eye-Level Shelf';
@@ -584,7 +577,6 @@ function toggleRowFields() {
         document.getElementById('fRowStart').value = '';
         document.getElementById('fRowEnd').value = '';
     } else {
-        // set min/max attributes
         const startInp = document.getElementById('fRowStart');
         const endInp = document.getElementById('fRowEnd');
         startInp.min = 1;
@@ -593,6 +585,57 @@ function toggleRowFields() {
         endInp.max = currentShelfRows;
         updateRowHelpText();
     }
+}
+
+// ---------- DYNAMIC SHELF POSITION DROPDOWN ----------
+function populateShelfDropdown(rows) {
+    const select = document.getElementById('fShelf');
+    select.innerHTML = ''; // clear
+    // add row-specific options
+    if (rows === 6) {
+        const rowNames = ['Top Shelf (Row 1)', 'Upper-Mid Shelf (Row 2)', 'Eye-Level Shelf (Row 3)', 'Mid-Lower Shelf (Row 4)', 'Lower Shelf (Row 5)', 'Bottom Shelf (Row 6)'];
+        for (let i = 0; i < rowNames.length; i++) {
+            const option = document.createElement('option');
+            option.value = rowNames[i];
+            option.textContent = rowNames[i];
+            select.appendChild(option);
+        }
+    } else if (rows === 7) {
+        const rowNames = ['Top Shelf (Row 1)', 'Upper-Top Shelf (Row 2)', 'Upper-Mid Shelf (Row 3)', 'Eye-Level Shelf (Row 4)', 'Mid-Lower Shelf (Row 5)', 'Lower Shelf (Row 6)', 'Bottom Shelf (Row 7)'];
+        for (let i = 0; i < rowNames.length; i++) {
+            const option = document.createElement('option');
+            option.value = rowNames[i];
+            option.textContent = rowNames[i];
+            select.appendChild(option);
+        }
+    } else {
+        // generic rows
+        for (let i = 1; i <= rows; i++) {
+            let label = `Row ${i}`;
+            if (i === 1) label = `Row 1 (Top)`;
+            else if (i === rows) label = `Row ${rows} (Bottom)`;
+            else if (rows > 2 && i === Math.floor(rows/2)) label = `Row ${i} (Eye Level)`;
+            const option = document.createElement('option');
+            option.value = label;
+            option.textContent = label;
+            select.appendChild(option);
+        }
+    }
+    // always append special placements
+    const specials = ['Floor Stack', 'Gondola End', 'Checkout'];
+    specials.forEach(s => {
+        const opt = document.createElement('option');
+        opt.value = s;
+        opt.textContent = s;
+        select.appendChild(opt);
+    });
+    // add an empty option at the top for convenience
+    const emptyOpt = document.createElement('option');
+    emptyOpt.value = '';
+    emptyOpt.textContent = '— Select —';
+    emptyOpt.disabled = true;
+    emptyOpt.selected = true;
+    select.prepend(emptyOpt);
 }
 
 // ---------- STORE PICKER ----------
@@ -607,7 +650,6 @@ function selectStore(btn, store) {
     } else {
         otherInput.classList.remove('show');
         selectedStore = store;
-        // load stored rows for this store if exists
         const savedRows = storeRowsMap[store];
         if (savedRows) document.getElementById('storeShelfRows').value = savedRows;
         else document.getElementById('storeShelfRows').value = 6;
@@ -632,18 +674,18 @@ function checkConfirmReady() {
 function confirmStore() {
     if (!selectedStore) return;
     currentStore = selectedStore;
-    // get shelf rows value
     let rowsInput = document.getElementById('storeShelfRows').value;
     let rows = parseInt(rowsInput);
     if (isNaN(rows) || rows < 1) rows = 6;
     if (rows > 100) rows = 100;
     currentShelfRows = rows;
-    // store for this store
     storeRowsMap[currentStore] = currentShelfRows;
     localStorage.setItem('sf_store_rows', JSON.stringify(storeRowsMap));
     
     document.getElementById('storeBannerName').textContent = currentStore;
     document.getElementById('shelfRowsBadge').textContent = currentShelfRows + ' rows';
+    // rebuild shelf position dropdown based on current rows
+    populateShelfDropdown(currentShelfRows);
     document.getElementById('storePicker').style.display = 'none';
     document.getElementById('mainApp').style.display = 'block';
     applyMode();
@@ -833,7 +875,18 @@ function loadIntoForm(r) {
     document.getElementById('fScores').value = r.scores || '';
     document.getElementById('fMRP').value = r.mrp || '';
     document.getElementById('fSP').value = r.selling_price || '';
-    document.getElementById('fShelf').value = r.shelf_position || '';
+    // set shelf position: ensure it exists in current dropdown, otherwise leave empty
+    const shelfPosSelect = document.getElementById('fShelf');
+    const posVal = r.shelf_position || '';
+    let found = false;
+    for (let i = 0; i < shelfPosSelect.options.length; i++) {
+        if (shelfPosSelect.options[i].value === posVal) {
+            shelfPosSelect.value = posVal;
+            found = true;
+            break;
+        }
+    }
+    if (!found) shelfPosSelect.value = '';
     document.getElementById('fFacings').value = r.facings || '';
     document.getElementById('fAvail').value = r.availability || '';
     document.getElementById('fPromo').value = r.promo || '';
@@ -947,10 +1000,11 @@ function populateForm(barcode, data) {
     });
     document.getElementById('fNotes').value = '';
     document.getElementById('fNotes').classList.remove('auto-filled');
-    ['fMRP','fSP','fShelf','fFacings','fAvail','fPromo','fRowStart','fRowEnd'].forEach(id => {
+    ['fMRP','fSP','fFacings','fAvail','fPromo','fRowStart','fRowEnd'].forEach(id => {
         const el = document.getElementById(id);
         if (el) { el.value = ''; el.classList.remove('auto-filled'); }
     });
+    document.getElementById('fShelf').value = '';
     document.getElementById('rowMultipleCheckbox').checked = false;
     toggleRowFields();
     setTimeout(() => document.getElementById('formCard').scrollIntoView({ behavior:'smooth', block:'start' }), 100);
@@ -1008,13 +1062,12 @@ function saveRecord() {
         notes: document.getElementById('fNotes').value,
         row_start: multipleRows ? row_start : '',
         row_end: multipleRows ? row_end : '',
-        shelf_rows: currentShelfRows,  // store the row count used at save time
+        shelf_rows: currentShelfRows,
         timestamp: new Date().toLocaleString('en-IN')
     };
     if (editingIndex !== null) {
         record.timestamp = records[editingIndex].timestamp;
         record.updated_at = new Date().toLocaleString('en-IN');
-        // preserve old shelf_rows if not overwritten? but we keep current
         records[editingIndex] = record;
         localStorage.setItem('sf_records', JSON.stringify(records));
         renderRecords();
@@ -1162,7 +1215,9 @@ function showToast(msg) {
     setTimeout(() => t.classList.remove('show'), 2200);
 }
 
-// Initial render
+// Initial dropdown population (default 6 rows before store selection)
+populateShelfDropdown(6);
+// Render any existing records (if any from previous session)
 renderRecords();
 </script>
 </body>
