@@ -3,1225 +3,1166 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>SF Product Scanner</title>
+<title>SF Product Scanner - with Shelf Rows</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@300;400;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@300;400;600&display=swap');
 
-  :root {
-    --green: #00c853;
-    --dark: #0a0f0a;
-    --panel: #111711;
-    --border: #1e2e1e;
-    --text: #d4e8d4;
-    --muted: #5a7a5a;
-    --accent: #00ff88;
-    --red: #ff4444;
-    --yellow: #ffd600;
-    --blue: #00b8ff;
-    --purple: #c66bff;
-  }
+:root {
+--green: #00c853;
+--dark: #0a0f0a;
+--panel: #111711;
+--border: #1e2e1e;
+--text: #d4e8d4;
+--muted: #5a7a5a;
+--accent: #00ff88;
+--red: #ff4444;
+--yellow: #ffd600;
+--blue: #00b8ff;
+--purple: #c66bff;
+}
 
-  * { box-sizing: border-box; margin: 0; padding: 0; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
 
-  body {
-    background: var(--dark);
-    color: var(--text);
-    font-family: 'IBM Plex Sans', sans-serif;
-    min-height: 100vh;
-    padding-bottom: 40px;
-  }
+body {
+background: var(--dark);
+color: var(--text);
+font-family: 'IBM Plex Sans', sans-serif;
+min-height: 100vh;
+padding-bottom: 40px;
+}
 
-  /* STORE PICKER */
-  #storePicker {
-    position: fixed;
-    inset: 0;
-    background: var(--dark);
-    z-index: 999;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 24px;
-    overflow-y: auto;
-  }
+/* STORE PICKER */
+#storePicker {
+position: fixed;
+inset: 0;
+background: var(--dark);
+z-index: 999;
+display: flex;
+flex-direction: column;
+align-items: center;
+justify-content: center;
+padding: 24px;
+overflow-y: auto;
+}
 
-  .picker-logo { font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--accent); letter-spacing:3px; margin-bottom:28px; }
-  .picker-title { font-size:20px; font-weight:600; margin-bottom:6px; text-align:center; }
-  .picker-sub { font-size:13px; color:var(--muted); margin-bottom:24px; text-align:center; }
+.picker-logo { font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--accent); letter-spacing:3px; margin-bottom:28px; }
+.picker-title { font-size:20px; font-weight:600; margin-bottom:6px; text-align:center; }
+.picker-sub { font-size:13px; color:var(--muted); margin-bottom:24px; text-align:center; }
 
-  .store-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; width:100%; max-width:400px; margin-bottom:14px; }
+.store-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; width:100%; max-width:400px; margin-bottom:14px; }
 
-  .store-btn { background:var(--panel); border:1px solid var(--border); color:var(--text); padding:14px 10px; border-radius:10px; font-family:'IBM Plex Sans',sans-serif; font-size:13px; font-weight:600; cursor:pointer; transition:all .15s; text-align:center; line-height:1.3; }
-  .store-btn:active, .store-btn.selected { border-color:var(--accent); background:#0a1a0a; color:var(--accent); }
+.store-btn { background:var(--panel); border:1px solid var(--border); color:var(--text); padding:14px 10px; border-radius:10px; font-family:'IBM Plex Sans',sans-serif; font-size:13px; font-weight:600; cursor:pointer; transition:all .15s; text-align:center; line-height:1.3; }
+.store-btn:active, .store-btn.selected { border-color:var(--accent); background:#0a1a0a; color:var(--accent); }
 
-  .store-other { width:100%; max-width:400px; background:var(--dark); border:1px solid var(--border); border-radius:8px; color:var(--text); font-family:'IBM Plex Sans',sans-serif; font-size:14px; padding:12px; outline:none; margin-bottom:14px; display:none; }
-  .store-other.show { display:block; }
-  .store-other:focus { border-color:var(--accent); }
+.store-other { width:100%; max-width:400px; background:var(--dark); border:1px solid var(--border); border-radius:8px; color:var(--text); font-family:'IBM Plex Sans',sans-serif; font-size:14px; padding:12px; outline:none; margin-bottom:14px; display:none; }
+.store-other.show { display:block; }
+.store-other:focus { border-color:var(--accent); }
 
-  .btn-confirm { width:100%; max-width:400px; padding:15px; background:var(--accent); color:var(--dark); border:none; border-radius:10px; font-family:'IBM Plex Mono',monospace; font-size:13px; font-weight:600; letter-spacing:1px; cursor:pointer; opacity:.4; pointer-events:none; transition:all .15s; }
-  .btn-confirm.ready { opacity:1; pointer-events:all; }
+.shelf-rows-row { width:100%; max-width:400px; margin:12px 0 16px; display:flex; gap:12px; align-items:center; justify-content:space-between; }
+.shelf-rows-row label { font-size:12px; font-family:'IBM Plex Mono',monospace; color:var(--muted); }
+.shelf-rows-row input { background:var(--dark); border:1px solid var(--border); color:var(--text); font-family:'IBM Plex Mono',monospace; font-size:14px; padding:8px 12px; width:80px; border-radius:6px; text-align:center; }
+.shelf-rows-row input:focus { border-color:var(--accent); }
 
-  /* HEADER */
-  header { background:var(--panel); border-bottom:1px solid var(--border); padding:12px 16px; position:sticky; top:0; z-index:100; }
-  .header-row { display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; }
-  .logo { font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:600; color:var(--accent); letter-spacing:2px; }
-  .count-badge { background:var(--border); border:1px solid var(--green); color:var(--green); font-family:'IBM Plex Mono',monospace; font-size:11px; padding:3px 10px; border-radius:20px; }
+.btn-confirm { width:100%; max-width:400px; padding:15px; background:var(--accent); color:var(--dark); border:none; border-radius:10px; font-family:'IBM Plex Mono',monospace; font-size:13px; font-weight:600; letter-spacing:1px; cursor:pointer; opacity:.4; pointer-events:none; transition:all .15s; }
+.btn-confirm.ready { opacity:1; pointer-events:all; }
 
-  .store-banner { display:flex; align-items:center; justify-content:space-between; background:#0a1a0a; border:1px solid var(--green); border-radius:8px; padding:8px 12px; }
-  .store-banner-left { display:flex; align-items:center; gap:8px; }
-  .store-dot { width:8px; height:8px; border-radius:50%; background:var(--green); box-shadow:0 0 6px var(--green); }
-  .store-banner-name { font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--green); font-weight:600; }
-  .btn-change-store { background:none; border:1px solid var(--muted); color:var(--muted); font-family:'IBM Plex Mono',monospace; font-size:10px; padding:3px 8px; border-radius:4px; cursor:pointer; }
-  .btn-change-store:active { border-color:var(--accent); color:var(--accent); }
+/* HEADER */
+header { background:var(--panel); border-bottom:1px solid var(--border); padding:12px 16px; position:sticky; top:0; z-index:100; }
+.header-row { display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; }
+.logo { font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:600; color:var(--accent); letter-spacing:2px; }
+.count-badge { background:var(--border); border:1px solid var(--green); color:var(--green); font-family:'IBM Plex Mono',monospace; font-size:11px; padding:3px 10px; border-radius:20px; }
 
-  /* MAIN */
-  .container { padding:14px; max-width:480px; margin:0 auto; }
+.store-banner { display:flex; align-items:center; justify-content:space-between; background:#0a1a0a; border:1px solid var(--green); border-radius:8px; padding:8px 12px; }
+.store-banner-left { display:flex; align-items:center; gap:8px; }
+.store-dot { width:8px; height:8px; border-radius:50%; background:var(--green); box-shadow:0 0 6px var(--green); }
+.store-banner-name { font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--green); font-weight:600; }
+.shelf-rows-badge { background:#1a2a1a; color:var(--yellow); font-family:'IBM Plex Mono',monospace; font-size:9px; padding:2px 6px; border-radius:10px; margin-left:8px; }
+.btn-change-store { background:none; border:1px solid var(--muted); color:var(--muted); font-family:'IBM Plex Mono',monospace; font-size:10px; padding:3px 8px; border-radius:4px; cursor:pointer; }
+.btn-change-store:active { border-color:var(--accent); color:var(--accent); }
 
-  .scanner-card { background:var(--panel); border:1px solid var(--border); border-radius:12px; overflow:hidden; margin-bottom:14px; }
-  .scanner-header { padding:10px 14px; display:flex; align-items:center; gap:8px; border-bottom:1px solid var(--border); }
-  .dot { width:8px; height:8px; border-radius:50%; background:var(--muted); }
-  .dot.active { background:var(--green); box-shadow:0 0 8px var(--green); animation:pulse 1.5s infinite; }
-  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
-  .scanner-label { font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--muted); letter-spacing:1px; text-transform:uppercase; }
+/* MAIN */
+.container { padding:14px; max-width:480px; margin:0 auto; }
 
-  #scanner-viewport { position:relative; width:100%; height:220px; background:#000; display:none; overflow:hidden; }
-  #scanner-viewport canvas, #scanner-viewport video { width:100%!important; height:100%!important; object-fit:cover; }
-  .scan-line { position:absolute; left:10%; right:10%; height:2px; background:var(--accent); box-shadow:0 0 10px var(--accent); animation:scanline 2s ease-in-out infinite; pointer-events:none; z-index:10; }
-  @keyframes scanline { 0%{top:20%} 50%{top:80%} 100%{top:20%} }
-  .corner { position:absolute; width:22px; height:22px; border-color:var(--accent); border-style:solid; }
-  .c-tl { top:14px; left:14px; border-width:2px 0 0 2px; }
-  .c-tr { top:14px; right:14px; border-width:2px 2px 0 0; }
-  .c-bl { bottom:14px; left:14px; border-width:0 0 2px 2px; }
-  .c-br { bottom:14px; right:14px; border-width:0 2px 2px 0; }
+.scanner-card { background:var(--panel); border:1px solid var(--border); border-radius:12px; overflow:hidden; margin-bottom:14px; }
+.scanner-header { padding:10px 14px; display:flex; align-items:center; gap:8px; border-bottom:1px solid var(--border); }
+.dot { width:8px; height:8px; border-radius:50%; background:var(--muted); }
+.dot.active { background:var(--green); box-shadow:0 0 8px var(--green); animation:pulse 1.5s infinite; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+.scanner-label { font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--muted); letter-spacing:1px; text-transform:uppercase; }
 
-  .scanner-placeholder { display:flex; flex-direction:column; align-items:center; justify-content:center; height:140px; gap:10px; color:var(--muted); }
-  .barcode-icon { font-size:40px; opacity:.4; }
-  .scanner-placeholder p { font-size:12px; text-align:center; }
+#scanner-viewport { position:relative; width:100%; height:220px; background:#000; display:none; overflow:hidden; }
+#scanner-viewport canvas, #scanner-viewport video { width:100%!important; height:100%!important; object-fit:cover; }
+.scan-line { position:absolute; left:10%; right:10%; height:2px; background:var(--accent); box-shadow:0 0 10px var(--accent); animation:scanline 2s ease-in-out infinite; pointer-events:none; z-index:10; }
+@keyframes scanline { 0%{top:20%} 50%{top:80%} 100%{top:20%} }
+.corner { position:absolute; width:22px; height:22px; border-color:var(--accent); border-style:solid; }
+.c-tl { top:14px; left:14px; border-width:2px 0 0 2px; }
+.c-tr { top:14px; right:14px; border-width:2px 2px 0 0; }
+.c-bl { bottom:14px; left:14px; border-width:0 0 2px 2px; }
+.c-br { bottom:14px; right:14px; border-width:0 2px 2px 0; }
 
-  .btn-scan { display:block; width:calc(100% - 28px); margin:14px; padding:13px; background:var(--accent); color:var(--dark); border:none; border-radius:8px; font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:600; letter-spacing:1px; cursor:pointer; transition:all .15s; text-transform:uppercase; }
-  .btn-scan:active { transform:scale(.97); }
-  .btn-scan.stop { background:var(--red); color:#fff; }
+.scanner-placeholder { display:flex; flex-direction:column; align-items:center; justify-content:center; height:140px; gap:10px; color:var(--muted); }
+.barcode-icon { font-size:40px; opacity:.4; }
+.scanner-placeholder p { font-size:12px; text-align:center; }
 
-  .manual-row { display:flex; gap:8px; padding:0 14px 14px; }
-  .manual-row input { flex:1; background:var(--dark); border:1px solid var(--border); border-radius:6px; color:var(--text); font-family:'IBM Plex Mono',monospace; font-size:13px; padding:10px 12px; outline:none; }
-  .manual-row input:focus { border-color:var(--accent); }
-  .manual-row input::placeholder { color:var(--muted); }
-  .btn-go { background:var(--border); border:1px solid var(--green); color:var(--green); border-radius:6px; padding:10px 14px; font-family:'IBM Plex Mono',monospace; font-size:12px; cursor:pointer; white-space:nowrap; }
-  .btn-go:active { background:var(--green); color:var(--dark); }
+.btn-scan { display:block; width:calc(100% - 28px); margin:14px; padding:13px; background:var(--accent); color:var(--dark); border:none; border-radius:8px; font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:600; letter-spacing:1px; cursor:pointer; transition:all .15s; text-transform:uppercase; }
+.btn-scan:active { transform:scale(.97); }
+.btn-scan.stop { background:var(--red); color:#fff; }
 
-  .status-bar { margin-bottom:14px; padding:10px 14px; border-radius:8px; font-family:'IBM Plex Mono',monospace; font-size:12px; display:none; align-items:center; gap:8px; }
-  .status-bar.loading { display:flex; background:#1a1a0a; border:1px solid var(--yellow); color:var(--yellow); }
-  .status-bar.success { display:flex; background:#0a1a0a; border:1px solid var(--green); color:var(--green); }
-  .status-bar.error { display:flex; background:#1a0a0a; border:1px solid var(--red); color:var(--red); }
-  .spinner { width:14px; height:14px; border:2px solid transparent; border-top-color:currentColor; border-radius:50%; animation:spin .8s linear infinite; flex-shrink:0; }
-  @keyframes spin { to{transform:rotate(360deg)} }
+.manual-row { display:flex; gap:8px; padding:0 14px 14px; }
+.manual-row input { flex:1; background:var(--dark); border:1px solid var(--border); border-radius:6px; color:var(--text); font-family:'IBM Plex Mono',monospace; font-size:13px; padding:10px 12px; outline:none; }
+.manual-row input:focus { border-color:var(--accent); }
+.manual-row input::placeholder { color:var(--muted); }
+.btn-go { background:var(--border); border:1px solid var(--green); color:var(--green); border-radius:6px; padding:10px 14px; font-family:'IBM Plex Mono',monospace; font-size:12px; cursor:pointer; white-space:nowrap; }
+.btn-go:active { background:var(--green); color:var(--dark); }
 
-  /* FORM */
-  .form-card { background:var(--panel); border:1px solid var(--border); border-radius:12px; padding:14px; margin-bottom:14px; display:none; }
-  .form-card.visible { display:block; }
-  .form-card.editing { border-color:var(--blue); box-shadow:0 0 0 1px var(--blue); }
-  .form-title { font-family:'IBM Plex Mono',monospace; font-size:10px; color:var(--muted); letter-spacing:2px; text-transform:uppercase; margin-bottom:14px; display:flex; align-items:center; justify-content:space-between; }
-  .auto-tag { background:#0a1a0a; border:1px solid var(--green); color:var(--green); font-family:'IBM Plex Mono',monospace; font-size:9px; padding:2px 7px; border-radius:3px; letter-spacing:1px; }
-  .auto-tag.edit { background:#0a141a; border-color:var(--blue); color:var(--blue); }
-  .auto-tag.copy { background:#1a0a1a; border-color:var(--purple); color:var(--purple); }
-  .auto-tag.upc { background:#1a1408; border-color:var(--yellow); color:var(--yellow); }
+.status-bar { margin-bottom:14px; padding:10px 14px; border-radius:8px; font-family:'IBM Plex Mono',monospace; font-size:12px; display:none; align-items:center; gap:8px; }
+.status-bar.loading { display:flex; background:#1a1a0a; border:1px solid var(--yellow); color:var(--yellow); }
+.status-bar.success { display:flex; background:#0a1a0a; border:1px solid var(--green); color:var(--green); }
+.status-bar.error { display:flex; background:#1a0a0a; border:1px solid var(--red); color:var(--red); }
+.spinner { width:14px; height:14px; border:2px solid transparent; border-top-color:currentColor; border-radius:50%; animation:spin .8s linear infinite; flex-shrink:0; }
+@keyframes spin { to{transform:rotate(360deg)} }
 
-  .field-group { margin-bottom:12px; }
-  .field-label { display:block; font-size:11px; font-family:'IBM Plex Mono',monospace; color:var(--muted); margin-bottom:5px; letter-spacing:.5px; text-transform:uppercase; }
-  .field-label span { color:var(--accent); font-size:9px; margin-left:3px; }
-  .field-input { width:100%; background:var(--dark); border:1px solid var(--border); border-radius:6px; color:var(--text); font-family:'IBM Plex Sans',sans-serif; font-size:14px; padding:10px 12px; outline:none; transition:border-color .15s; }
-  .field-input:focus { border-color:var(--accent); }
-  .field-input::placeholder { color:var(--muted); }
-  .field-input.auto-filled { border-color:var(--green); background:#0a150a; }
-  .field-input.auto-filled-upc { border-color:var(--yellow); background:#1a1408; }
-  .field-input[type="number"] { -moz-appearance:textfield; }
-  textarea.field-input { resize:vertical; min-height:60px; font-family:'IBM Plex Sans',sans-serif; line-height:1.4; }
-  select.field-input { appearance:none; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%235a7a5a'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 12px center; }
+/* FORM */
+.form-card { background:var(--panel); border:1px solid var(--border); border-radius:12px; padding:14px; margin-bottom:14px; display:none; }
+.form-card.visible { display:block; }
+.form-card.editing { border-color:var(--blue); box-shadow:0 0 0 1px var(--blue); }
+.form-title { font-family:'IBM Plex Mono',monospace; font-size:10px; color:var(--muted); letter-spacing:2px; text-transform:uppercase; margin-bottom:14px; display:flex; align-items:center; justify-content:space-between; }
+.auto-tag { background:#0a1a0a; border:1px solid var(--green); color:var(--green); font-family:'IBM Plex Mono',monospace; font-size:9px; padding:2px 7px; border-radius:3px; letter-spacing:1px; }
+.auto-tag.edit { background:#0a141a; border-color:var(--blue); color:var(--blue); }
+.auto-tag.copy { background:#1a0a1a; border-color:var(--purple); color:var(--purple); }
 
-  .two-col { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
-  .divider { height:1px; background:var(--border); margin:14px 0; }
-  .section-label { font-size:10px; font-family:'IBM Plex Mono',monospace; color:var(--muted); letter-spacing:1.5px; text-transform:uppercase; margin-bottom:10px; display:flex; align-items:center; gap:8px; }
-  .section-label::after { content:''; flex:1; height:1px; background:var(--border); }
+.field-group { margin-bottom:12px; }
+.field-label { display:block; font-size:11px; font-family:'IBM Plex Mono',monospace; color:var(--muted); margin-bottom:5px; letter-spacing:.5px; text-transform:uppercase; }
+.field-label span { color:var(--accent); font-size:9px; margin-left:3px; }
+.field-input { width:100%; background:var(--dark); border:1px solid var(--border); border-radius:6px; color:var(--text); font-family:'IBM Plex Sans',sans-serif; font-size:14px; padding:10px 12px; outline:none; transition:border-color .15s; }
+.field-input:focus { border-color:var(--accent); }
+.field-input::placeholder { color:var(--muted); }
+.field-input.auto-filled { border-color:var(--green); background:#0a150a; }
+.field-input[type="number"] { -moz-appearance:textfield; }
+textarea.field-input { resize:vertical; min-height:60px; font-family:'IBM Plex Sans',sans-serif; line-height:1.4; }
+select.field-input { appearance:none; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%235a7a5a'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 12px center; }
 
-  .pl-toggle-group { display:flex; gap:8px; margin-top:5px; }
-  .pl-toggle { flex:1; background:var(--dark); border:1px solid var(--border); color:var(--muted); padding:10px; border-radius:6px; font-family:'IBM Plex Mono',monospace; font-size:12px; cursor:pointer; letter-spacing:1px; transition:all .15s; }
-  .pl-toggle:active { transform:scale(.98); }
-  .pl-toggle.active.yes { border-color:var(--yellow); background:#1a1a0a; color:var(--yellow); }
-  .pl-toggle.active.no { border-color:var(--green); background:#0a1a0a; color:var(--green); }
-  .manufacturer-wrap { margin-top:10px; display:none; }
-  .manufacturer-wrap.show { display:block; }
+.two-col { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+.divider { height:1px; background:var(--border); margin:14px 0; }
+.section-label { font-size:10px; font-family:'IBM Plex Mono',monospace; color:var(--muted); letter-spacing:1.5px; text-transform:uppercase; margin-bottom:10px; display:flex; align-items:center; gap:8px; }
+.section-label::after { content:''; flex:1; height:1px; background:var(--border); }
 
-  .btn-row { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:14px; }
-  .btn-save { padding:13px; background:var(--green); color:var(--dark); border:none; border-radius:8px; font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:600; cursor:pointer; letter-spacing:1px; }
-  .btn-save:active { transform:scale(.97); }
-  .btn-save.editing { background:var(--blue); }
-  .btn-clear { padding:13px; background:transparent; color:var(--muted); border:1px solid var(--border); border-radius:8px; font-family:'IBM Plex Mono',monospace; font-size:12px; cursor:pointer; letter-spacing:1px; }
-  .btn-clear:active { border-color:var(--red); color:var(--red); }
+.pl-toggle-group { display:flex; gap:8px; margin-top:5px; }
+.pl-toggle { flex:1; background:var(--dark); border:1px solid var(--border); color:var(--muted); padding:10px; border-radius:6px; font-family:'IBM Plex Mono',monospace; font-size:12px; cursor:pointer; letter-spacing:1px; transition:all .15s; }
+.pl-toggle:active { transform:scale(.98); }
+.pl-toggle.active.yes { border-color:var(--yellow); background:#1a1a0a; color:var(--yellow); }
+.pl-toggle.active.no { border-color:var(--green); background:#0a1a0a; color:var(--green); }
+.manufacturer-wrap { margin-top:10px; display:none; }
+.manufacturer-wrap.show { display:block; }
 
-  .btn-same { width:100%; margin-top:10px; padding:12px; background:transparent; color:var(--yellow); border:1px solid var(--yellow); border-radius:8px; font-family:'IBM Plex Mono',monospace; font-size:11px; cursor:pointer; letter-spacing:1px; display:none; }
-  .btn-same.visible { display:block; }
-  .btn-same:active { background:var(--yellow); color:var(--dark); }
+/* ROW OCCUPANCY */
+.row-checkbox-row { display:flex; align-items:center; gap:12px; margin-bottom:12px; }
+.row-checkbox-row input[type="checkbox"] { width:18px; height:18px; accent-color:var(--accent); margin:0; }
+.row-checkbox-row label { font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--text); cursor:pointer; }
+.row-range-group { display:flex; gap:16px; margin-bottom:12px; padding-left:28px; flex-wrap:wrap; }
+.row-range-group .field-group { margin-bottom:0; flex:1; min-width:100px; }
+.row-help { font-size:10px; color:var(--muted); margin-top:4px; margin-left:28px; margin-bottom:12px; font-style:italic; }
 
-  /* SEARCH FALLBACK (when both APIs miss) */
-  .search-fallback { background:#1a1408; border:1px solid var(--yellow); border-radius:8px; padding:12px; margin-bottom:14px; }
-  .search-fallback-label { font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--yellow); margin-bottom:8px; letter-spacing:.5px; text-align:center; }
-  .search-fallback-buttons { display:flex; gap:6px; }
-  .search-fallback-buttons button { flex:1; background:transparent; color:var(--yellow); border:1px solid var(--yellow); padding:9px 4px; border-radius:6px; font-family:'IBM Plex Mono',monospace; font-size:10px; font-weight:600; cursor:pointer; letter-spacing:.5px; }
-  .search-fallback-buttons button:active { background:var(--yellow); color:var(--dark); transform:scale(.97); }
+.btn-row { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:14px; }
+.btn-save { padding:13px; background:var(--green); color:var(--dark); border:none; border-radius:8px; font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:600; cursor:pointer; letter-spacing:1px; }
+.btn-save:active { transform:scale(.97); }
+.btn-save.editing { background:var(--blue); }
+.btn-clear { padding:13px; background:transparent; color:var(--muted); border:1px solid var(--border); border-radius:8px; font-family:'IBM Plex Mono',monospace; font-size:12px; cursor:pointer; letter-spacing:1px; }
+.btn-clear:active { border-color:var(--red); color:var(--red); }
 
-  /* RECORDS */
-  .records-card { background:var(--panel); border:1px solid var(--border); border-radius:12px; overflow:hidden; margin-bottom:14px; }
-  .records-header { padding:12px 14px; display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid var(--border); }
-  .records-title { font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--muted); letter-spacing:1px; text-transform:uppercase; }
-  .btn-export { background:transparent; border:1px solid var(--yellow); color:var(--yellow); font-family:'IBM Plex Mono',monospace; font-size:10px; padding:5px 12px; border-radius:4px; cursor:pointer; letter-spacing:1px; }
-  .btn-export:active { background:var(--yellow); color:var(--dark); }
-  .records-empty { padding:28px 14px; text-align:center; color:var(--muted); font-size:13px; }
+.btn-same { width:100%; margin-top:10px; padding:12px; background:transparent; color:var(--yellow); border:1px solid var(--yellow); border-radius:8px; font-family:'IBM Plex Mono',monospace; font-size:11px; cursor:pointer; letter-spacing:1px; display:none; }
+.btn-same.visible { display:block; }
+.btn-same:active { background:var(--yellow); color:var(--dark); }
 
-  .record-item { padding:10px 12px; border-bottom:1px solid var(--border); display:grid; grid-template-columns:18px 1fr auto; gap:8px; align-items:center; }
-  .record-item:last-child { border-bottom:none; }
-  .record-num { font-family:'IBM Plex Mono',monospace; font-size:10px; color:var(--muted); }
-  .record-info { min-width:0; }
-  .record-name { font-size:13px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; display:flex; align-items:center; gap:6px; }
-  .pl-pill { background:#1a1a0a; border:1px solid var(--yellow); color:var(--yellow); font-family:'IBM Plex Mono',monospace; font-size:8px; padding:1px 5px; border-radius:3px; letter-spacing:.5px; flex-shrink:0; }
-  .record-sub { font-size:11px; color:var(--muted); font-family:'IBM Plex Mono',monospace; margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  .record-price { font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--accent); }
-  .record-actions { grid-column:1 / -1; display:flex; gap:6px; margin-top:8px; padding-top:8px; border-top:1px dashed var(--border); }
-  .act-btn { flex:1; background:transparent; border:1px solid var(--border); color:var(--muted); font-family:'IBM Plex Mono',monospace; font-size:10px; padding:6px 4px; border-radius:5px; cursor:pointer; letter-spacing:.5px; display:flex; align-items:center; justify-content:center; gap:4px; transition:all .15s; }
-  .act-btn:active { transform:scale(.95); }
-  .act-btn.view:active { border-color:var(--accent); color:var(--accent); }
-  .act-btn.edit:active { border-color:var(--blue); color:var(--blue); }
-  .act-btn.copy:active { border-color:var(--purple); color:var(--purple); }
-  .act-btn.del:active { border-color:var(--red); color:var(--red); }
+/* RECORDS */
+.records-card { background:var(--panel); border:1px solid var(--border); border-radius:12px; overflow:hidden; margin-bottom:14px; }
+.records-header { padding:12px 14px; display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid var(--border); }
+.records-title { font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--muted); letter-spacing:1px; text-transform:uppercase; }
+.btn-export { background:transparent; border:1px solid var(--yellow); color:var(--yellow); font-family:'IBM Plex Mono',monospace; font-size:10px; padding:5px 12px; border-radius:4px; cursor:pointer; letter-spacing:1px; }
+.btn-export:active { background:var(--yellow); color:var(--dark); }
+.records-empty { padding:28px 14px; text-align:center; color:var(--muted); font-size:13px; }
 
-  /* MODE TOGGLE */
-  .header-actions { display:flex; gap:8px; align-items:center; }
-  .mode-toggle { background:#0a1a0a; border:1px solid var(--green); color:var(--green); font-family:'IBM Plex Mono',monospace; font-size:10px; font-weight:600; padding:3px 10px; border-radius:20px; cursor:pointer; letter-spacing:1px; white-space:nowrap; transition:all .15s; }
-  .mode-toggle:active { transform:scale(.95); }
-  .mode-toggle.offline { background:#1a1408; border-color:var(--yellow); color:var(--yellow); }
+.record-item { padding:10px 12px; border-bottom:1px solid var(--border); display:grid; grid-template-columns:18px 1fr auto; gap:8px; align-items:center; }
+.record-item:last-child { border-bottom:none; }
+.record-num { font-family:'IBM Plex Mono',monospace; font-size:10px; color:var(--muted); }
+.record-info { min-width:0; }
+.record-name { font-size:13px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; display:flex; align-items:center; gap:6px; }
+.pl-pill { background:#1a1a0a; border:1px solid var(--yellow); color:var(--yellow); font-family:'IBM Plex Mono',monospace; font-size:8px; padding:1px 5px; border-radius:3px; letter-spacing:.5px; flex-shrink:0; }
+.record-sub { font-size:11px; color:var(--muted); font-family:'IBM Plex Mono',monospace; margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.record-price { font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--accent); }
+.record-actions { grid-column:1 / -1; display:flex; gap:6px; margin-top:8px; padding-top:8px; border-top:1px dashed var(--border); }
+.act-btn { flex:1; background:transparent; border:1px solid var(--border); color:var(--muted); font-family:'IBM Plex Mono',monospace; font-size:10px; padding:6px 4px; border-radius:5px; cursor:pointer; letter-spacing:.5px; display:flex; align-items:center; justify-content:center; gap:4px; transition:all .15s; }
+.act-btn:active { transform:scale(.95); }
+.act-btn.view:active { border-color:var(--accent); color:var(--accent); }
+.act-btn.edit:active { border-color:var(--blue); color:var(--blue); }
+.act-btn.copy:active { border-color:var(--purple); color:var(--purple); }
+.act-btn.del:active { border-color:var(--red); color:var(--red); }
 
-  .scanner-card.hidden { display:none; }
-  .status-bar.hidden { display:none !important; }
+/* MODE TOGGLE */
+.header-actions { display:flex; gap:8px; align-items:center; }
+.mode-toggle { background:#0a1a0a; border:1px solid var(--green); color:var(--green); font-family:'IBM Plex Mono',monospace; font-size:10px; font-weight:600; padding:3px 10px; border-radius:20px; cursor:pointer; letter-spacing:1px; white-space:nowrap; transition:all .15s; }
+.mode-toggle:active { transform:scale(.95); }
+.mode-toggle.offline { background:#1a1408; border-color:var(--yellow); color:var(--yellow); }
 
-  .offline-hint { background:#1a1408; border:1px solid var(--yellow); color:var(--yellow); padding:9px 12px; border-radius:8px; font-family:'IBM Plex Mono',monospace; font-size:11px; margin-bottom:14px; text-align:center; display:none; letter-spacing:.5px; }
-  .offline-hint.visible { display:block; }
+.scanner-card.hidden { display:none; }
+.status-bar.hidden { display:none !important; }
 
-  .btn-new-manual { display:none; width:100%; margin-bottom:14px; padding:18px 14px; background:var(--panel); border:1px dashed var(--yellow); color:var(--yellow); border-radius:12px; font-family:'IBM Plex Mono',monospace; font-size:13px; font-weight:600; cursor:pointer; letter-spacing:1px; text-transform:uppercase; transition:all .15s; }
-  .btn-new-manual.visible { display:block; }
-  .btn-new-manual:active { background:#1a1408; transform:scale(.99); }
+.offline-hint { background:#1a1408; border:1px solid var(--yellow); color:var(--yellow); padding:9px 12px; border-radius:8px; font-family:'IBM Plex Mono',monospace; font-size:11px; margin-bottom:14px; text-align:center; display:none; letter-spacing:.5px; }
+.offline-hint.visible { display:block; }
 
-  /* MODAL */
-  .modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,.85); z-index:500; display:none; align-items:flex-start; justify-content:center; padding:20px 14px; overflow-y:auto; }
-  .modal-overlay.show { display:flex; }
-  .modal-card { background:var(--panel); border:1px solid var(--border); border-radius:12px; width:100%; max-width:480px; margin:auto 0; }
-  .modal-header { padding:14px; display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid var(--border); position:sticky; top:0; background:var(--panel); border-radius:12px 12px 0 0; }
-  .modal-title { font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--accent); letter-spacing:2px; text-transform:uppercase; }
-  .modal-close { background:none; border:none; color:var(--muted); font-size:24px; cursor:pointer; line-height:1; padding:0 4px; }
-  .modal-close:active { color:var(--red); }
-  .modal-body { padding:14px; }
-  .view-row { display:flex; flex-direction:column; padding:8px 0; border-bottom:1px solid var(--border); }
-  .view-row:last-child { border-bottom:none; }
-  .view-key { font-family:'IBM Plex Mono',monospace; font-size:9px; color:var(--muted); letter-spacing:1px; text-transform:uppercase; margin-bottom:3px; }
-  .view-val { font-size:13px; color:var(--text); word-break:break-word; line-height:1.4; }
-  .view-val.empty { color:var(--muted); font-style:italic; opacity:.5; }
-  .modal-actions { padding:12px 14px; display:grid; grid-template-columns:1fr 1fr; gap:8px; border-top:1px solid var(--border); }
-  .modal-actions button { padding:11px; border:none; border-radius:6px; font-family:'IBM Plex Mono',monospace; font-size:11px; font-weight:600; cursor:pointer; letter-spacing:1px; }
-  .ma-edit { background:var(--blue); color:var(--dark); }
-  .ma-copy { background:var(--purple); color:var(--dark); }
+.btn-new-manual { display:none; width:100%; margin-bottom:14px; padding:18px 14px; background:var(--panel); border:1px dashed var(--yellow); color:var(--yellow); border-radius:12px; font-family:'IBM Plex Mono',monospace; font-size:13px; font-weight:600; cursor:pointer; letter-spacing:1px; text-transform:uppercase; transition:all .15s; }
+.btn-new-manual.visible { display:block; }
+.btn-new-manual:active { background:#1a1408; transform:scale(.99); }
 
-  .toast { position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(80px); background:var(--green); color:var(--dark); font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:600; padding:10px 20px; border-radius:20px; transition:transform .3s cubic-bezier(.34,1.56,.64,1); z-index:9999; white-space:nowrap; }
-  .toast.show { transform:translateX(-50%) translateY(0); }
+/* MODAL */
+.modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,.85); z-index:500; display:none; align-items:flex-start; justify-content:center; padding:20px 14px; overflow-y:auto; }
+.modal-overlay.show { display:flex; }
+.modal-card { background:var(--panel); border:1px solid var(--border); border-radius:12px; width:100%; max-width:480px; margin:auto 0; }
+.modal-header { padding:14px; display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid var(--border); position:sticky; top:0; background:var(--panel); border-radius:12px 12px 0 0; }
+.modal-title { font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--accent); letter-spacing:2px; text-transform:uppercase; }
+.modal-close { background:none; border:none; color:var(--muted); font-size:24px; cursor:pointer; line-height:1; padding:0 4px; }
+.modal-close:active { color:var(--red); }
+.modal-body { padding:14px; }
+.view-row { display:flex; flex-direction:column; padding:8px 0; border-bottom:1px solid var(--border); }
+.view-row:last-child { border-bottom:none; }
+.view-key { font-family:'IBM Plex Mono',monospace; font-size:9px; color:var(--muted); letter-spacing:1px; text-transform:uppercase; margin-bottom:3px; }
+.view-val { font-size:13px; color:var(--text); word-break:break-word; line-height:1.4; }
+.view-val.empty { color:var(--muted); font-style:italic; opacity:.5; }
+.modal-actions { padding:12px 14px; display:grid; grid-template-columns:1fr 1fr; gap:8px; border-top:1px solid var(--border); }
+.modal-actions button { padding:11px; border:none; border-radius:6px; font-family:'IBM Plex Mono',monospace; font-size:11px; font-weight:600; cursor:pointer; letter-spacing:1px; }
+.ma-edit { background:var(--blue); color:var(--dark); }
+.ma-copy { background:var(--purple); color:var(--dark); }
+
+.toast { position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(80px); background:var(--green); color:var(--dark); font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:600; padding:10px 20px; border-radius:20px; transition:transform .3s cubic-bezier(.34,1.56,.64,1); z-index:9999; white-space:nowrap; }
+.toast.show { transform:translateX(-50%) translateY(0); }
 </style>
 </head>
 <body>
 
 <!-- STORE PICKER -->
 <div id="storePicker">
-  <div class="picker-logo">SF · SCANNER</div>
-  <div class="picker-title">Which store today?</div>
-  <div class="picker-sub">Set once — applies to all products in this session</div>
-  <div class="store-grid">
-    <button class="store-btn" onclick="selectStore(this,'DMart')">DMart</button>
-    <button class="store-btn" onclick="selectStore(this,'Reliance Smart Bazaar')">Reliance Smart</button>
-    <button class="store-btn" onclick="selectStore(this,`Nature's Basket`)">Nature's Basket</button>
-    <button class="store-btn" onclick="selectStore(this,`Spencer's`)">Spencer's</button>
-    <button class="store-btn" onclick="selectStore(this,'Star Bazaar')">Star Bazaar</button>
-    <button class="store-btn" onclick="selectStore(this,'More Retail')">More Retail</button>
-    <button class="store-btn" onclick="selectStore(this,'Foodhall')">Foodhall</button>
-    <button class="store-btn" onclick="selectStore(this,'Le Marche')">Le Marche</button>
-    <button class="store-btn" onclick="selectStore(this,'Lulu Hypermarket')">Lulu Hypermarket</button>
-    <button class="store-btn" onclick="selectStore(this,'Metro Cash & Carry')">Metro C&amp;C</button>
-    <button class="store-btn" onclick="selectStore(this,'Sahakari Bhandar')">Sahakari Bhandar</button>
-    <button class="store-btn" onclick="selectStore(this,'other')">Other ✏️</button>
-  </div>
-  <input type="text" class="store-other" id="otherStoreInput" placeholder="Type store name...">
-  <button class="btn-confirm" id="btnConfirm" onclick="confirmStore()">START SCANNING →</button>
+<div class="picker-logo">SF · SCANNER</div>
+<div class="picker-title">Which store today?</div>
+<div class="picker-sub">Set once — applies to all products in this session</div>
+<div class="store-grid">
+<button class="store-btn" onclick="selectStore(this,'DMart')">DMart</button>
+<button class="store-btn" onclick="selectStore(this,'Reliance Smart Bazaar')">Reliance Smart</button>
+<button class="store-btn" onclick="selectStore(this,`Nature's Basket`)">Nature's Basket</button>
+<button class="store-btn" onclick="selectStore(this,`Spencer's`)">Spencer's</button>
+<button class="store-btn" onclick="selectStore(this,'Star Bazaar')">Star Bazaar</button>
+<button class="store-btn" onclick="selectStore(this,'More Retail')">More Retail</button>
+<button class="store-btn" onclick="selectStore(this,'Foodhall')">Foodhall</button>
+<button class="store-btn" onclick="selectStore(this,'Le Marche')">Le Marche</button>
+<button class="store-btn" onclick="selectStore(this,'Lulu Hypermarket')">Lulu Hypermarket</button>
+<button class="store-btn" onclick="selectStore(this,'Metro Cash & Carry')">Metro C&amp;C</button>
+<button class="store-btn" onclick="selectStore(this,'Sahakari Bhandar')">Sahakari Bhandar</button>
+<button class="store-btn" onclick="selectStore(this,'other')">Other ✏️</button>
+</div>
+<input type="text" class="store-other" id="otherStoreInput" placeholder="Type store name...">
+
+<!-- Shelf row count (store-specific) -->
+<div class="shelf-rows-row">
+<label>📏 Rows per shelf:</label>
+<input type="number" id="storeShelfRows" min="1" max="100" value="6" step="1">
+</div>
+
+<button class="btn-confirm" id="btnConfirm" onclick="confirmStore()">START SCANNING →</button>
 </div>
 
 <!-- MAIN APP -->
 <div id="mainApp" style="display:none">
-  <header>
-    <div class="header-row">
-      <div class="logo">SF · SCANNER</div>
-      <div class="header-actions">
-        <button class="mode-toggle" id="modeToggle" onclick="toggleMode()">🌐 ONLINE</button>
-        <div class="count-badge" id="countBadge">0 products</div>
-      </div>
-    </div>
-    <div class="store-banner">
-      <div class="store-banner-left">
-        <div class="store-dot"></div>
-        <div class="store-banner-name" id="storeBannerName">—</div>
-      </div>
-      <button class="btn-change-store" onclick="changeStore()">CHANGE STORE</button>
-    </div>
-  </header>
+<header>
+<div class="header-row">
+<div class="logo">SF · SCANNER</div>
+<div class="header-actions">
+<button class="mode-toggle" id="modeToggle" onclick="toggleMode()">🌐 ONLINE</button>
+<div class="count-badge" id="countBadge">0 products</div>
+</div>
+</div>
+<div class="store-banner">
+<div class="store-banner-left">
+<div class="store-dot"></div>
+<div class="store-banner-name" id="storeBannerName">—</div>
+<span id="shelfRowsBadge" class="shelf-rows-badge">6 rows</span>
+</div>
+<button class="btn-change-store" onclick="changeStore()">CHANGE STORE</button>
+</div>
+</header>
 
-  <div class="container">
+<div class="container">
 
-    <div class="offline-hint" id="offlineHint">
-      📴 OFFLINE MODE — manual entry only, no barcode lookup
-    </div>
+<div class="offline-hint" id="offlineHint">
+📴 OFFLINE MODE — manual entry only, no barcode lookup
+</div>
 
-    <button class="btn-new-manual" id="btnNewManual" onclick="startNewManualEntry()">
-      + NEW MANUAL ENTRY
-    </button>
+<button class="btn-new-manual" id="btnNewManual" onclick="startNewManualEntry()">
++ NEW MANUAL ENTRY
+</button>
 
-    <div class="scanner-card">
-      <div class="scanner-header">
-        <div class="dot" id="scanDot"></div>
-        <div class="scanner-label" id="scanLabel">Camera Scanner</div>
-      </div>
-      <div id="scanner-placeholder" class="scanner-placeholder">
-        <div class="barcode-icon">▋▌▋▌▋▌▋</div>
-        <p>Tap below to activate camera<br>and scan product barcode</p>
-      </div>
-      <div id="scanner-viewport">
-        <div class="scan-line"></div>
-        <div class="corner c-tl"></div><div class="corner c-tr"></div>
-        <div class="corner c-bl"></div><div class="corner c-br"></div>
-      </div>
-      <button class="btn-scan" id="btnToggleScan" onclick="toggleScanner()">START SCANNING</button>
-      <div class="manual-row">
-        <input type="text" id="manualBarcode" placeholder="or type barcode manually..." inputmode="numeric">
-        <button class="btn-go" onclick="lookupManual()">FETCH →</button>
-      </div>
-    </div>
+<div class="scanner-card">
+<div class="scanner-header">
+<div class="dot" id="scanDot"></div>
+<div class="scanner-label" id="scanLabel">Camera Scanner</div>
+</div>
+<div id="scanner-placeholder" class="scanner-placeholder">
+<div class="barcode-icon">▋▌▋▌▋▌▋</div>
+<p>Tap below to activate camera<br>and scan product barcode</p>
+</div>
+<div id="scanner-viewport">
+<div class="scan-line"></div>
+<div class="corner c-tl"></div><div class="corner c-tr"></div>
+<div class="corner c-bl"></div><div class="corner c-br"></div>
+</div>
+<button class="btn-scan" id="btnToggleScan" onclick="toggleScanner()">START SCANNING</button>
+<div class="manual-row">
+<input type="text" id="manualBarcode" placeholder="or type barcode manually..." inputmode="numeric">
+<button class="btn-go" onclick="lookupManual()">FETCH →</button>
+</div>
+</div>
 
-    <div class="status-bar" id="statusBar">
-      <div class="spinner" id="statusSpinner"></div>
-      <span id="statusText"></span>
-    </div>
+<div class="status-bar" id="statusBar">
+<div class="spinner" id="statusSpinner"></div>
+<span id="statusText"></span>
+</div>
 
-    <div class="form-card" id="formCard">
-      <div class="form-title">
-        <span id="formTitleText">Product Details</span>
-        <span class="auto-tag" id="formModeTag">AUTO-FILLED</span>
-      </div>
+<div class="form-card" id="formCard">
+<div class="form-title">
+<span id="formTitleText">Product Details</span>
+<span class="auto-tag" id="formModeTag">AUTO-FILLED</span>
+</div>
 
-      <div class="section-label">Auto-fetched from barcode</div>
+<div class="section-label">Auto-fetched from barcode</div>
 
-      <div class="field-group">
-        <label class="field-label">Product Name <span>*</span></label>
-        <input type="text" class="field-input" id="fName" placeholder="e.g. Kissan Tomato Ketchup">
-      </div>
-      <div class="two-col">
-        <div class="field-group">
-          <label class="field-label">Brand</label>
-          <input type="text" class="field-input" id="fBrand" placeholder="Brand">
-        </div>
-        <div class="field-group">
-          <label class="field-label">Pack Size</label>
-          <input type="text" class="field-input" id="fPackSize" placeholder="e.g. 200g">
-        </div>
-      </div>
-      <div class="field-group">
-        <label class="field-label">Category</label>
-        <input type="text" class="field-input" id="fCategory" placeholder="e.g. Sauces">
-      </div>
+<div class="field-group">
+<label class="field-label">Product Name <span>*</span></label>
+<input type="text" class="field-input" id="fName" placeholder="e.g. Kissan Tomato Ketchup">
+</div>
+<div class="two-col">
+<div class="field-group">
+<label class="field-label">Brand</label>
+<input type="text" class="field-input" id="fBrand" placeholder="Brand">
+</div>
+<div class="field-group">
+<label class="field-label">Pack Size</label>
+<input type="text" class="field-input" id="fPackSize" placeholder="e.g. 200g">
+</div>
+</div>
+<div class="field-group">
+<label class="field-label">Category</label>
+<input type="text" class="field-input" id="fCategory" placeholder="e.g. Sauces">
+</div>
 
-      <!-- PRIVATE LABEL -->
-      <div class="field-group">
-        <label class="field-label">Private Label?</label>
-        <div class="pl-toggle-group">
-          <button type="button" class="pl-toggle yes" id="plYes" onclick="setPrivateLabel('yes')">YES</button>
-          <button type="button" class="pl-toggle no" id="plNo" onclick="setPrivateLabel('no')">NO</button>
-        </div>
-        <div class="manufacturer-wrap" id="manufacturerWrap">
-          <label class="field-label" style="margin-top:10px">Manufacturer Name <span>*</span></label>
-          <input type="text" class="field-input" id="fManufacturer" placeholder="e.g. Mother Dairy Fruit & Veg Pvt Ltd">
-        </div>
-      </div>
+<!-- PRIVATE LABEL -->
+<div class="field-group">
+<label class="field-label">Private Label?</label>
+<div class="pl-toggle-group">
+<button type="button" class="pl-toggle yes" id="plYes" onclick="setPrivateLabel('yes')">YES</button>
+<button type="button" class="pl-toggle no" id="plNo" onclick="setPrivateLabel('no')">NO</button>
+</div>
+<div class="manufacturer-wrap" id="manufacturerWrap">
+<label class="field-label" style="margin-top:10px">Manufacturer Name <span>*</span></label>
+<input type="text" class="field-input" id="fManufacturer" placeholder="e.g. Mother Dairy Fruit & Veg Pvt Ltd">
+</div>
+</div>
 
-      <div class="field-group">
-        <label class="field-label">Barcode</label>
-        <input type="text" class="field-input" id="fBarcode" placeholder="Barcode" readonly style="opacity:.6">
-      </div>
+<div class="field-group">
+<label class="field-label">Barcode</label>
+<input type="text" class="field-input" id="fBarcode" placeholder="Barcode" readonly style="opacity:.6">
+</div>
 
-      <div class="field-group">
-        <label class="field-label">Ingredients</label>
-        <textarea class="field-input" id="fIngredients" placeholder="Full ingredient list as printed on pack..." rows="3"></textarea>
-      </div>
-      <div class="field-group">
-        <label class="field-label">Nutrition <span style="color:var(--muted); text-transform:none; letter-spacing:0">(per 100g)</span></label>
-        <textarea class="field-input" id="fNutrition" placeholder="Energy, fat, carbs, sugars, protein, salt..." rows="3"></textarea>
-      </div>
-      <div class="two-col">
-        <div class="field-group">
-          <label class="field-label">Additives</label>
-          <input type="text" class="field-input" id="fAdditives" placeholder="e.g. E330, E412">
-        </div>
-        <div class="field-group">
-          <label class="field-label">Scores</label>
-          <input type="text" class="field-input" id="fScores" placeholder="NutriScore / NOVA / EcoScore">
-        </div>
-      </div>
+<div class="field-group">
+<label class="field-label">Ingredients</label>
+<textarea class="field-input" id="fIngredients" placeholder="Full ingredient list as printed on pack..." rows="3"></textarea>
+</div>
+<div class="field-group">
+<label class="field-label">Nutrition <span style="color:var(--muted); text-transform:none; letter-spacing:0">(per 100g)</span></label>
+<textarea class="field-input" id="fNutrition" placeholder="Energy, fat, carbs, sugars, protein, salt..." rows="3"></textarea>
+</div>
+<div class="two-col">
+<div class="field-group">
+<label class="field-label">Additives</label>
+<input type="text" class="field-input" id="fAdditives" placeholder="e.g. E330, E412">
+</div>
+<div class="field-group">
+<label class="field-label">Scores</label>
+<input type="text" class="field-input" id="fScores" placeholder="NutriScore / NOVA / EcoScore">
+</div>
+</div>
 
-      <div class="divider"></div>
-      <div class="section-label">Fill in-store</div>
+<div class="divider"></div>
+<div class="section-label">Fill in-store</div>
 
-      <div class="two-col">
-        <div class="field-group">
-          <label class="field-label">MRP (₹) <span>*</span></label>
-          <input type="number" class="field-input" id="fMRP" placeholder="0.00" inputmode="decimal">
-        </div>
-        <div class="field-group">
-          <label class="field-label">Selling Price (₹)</label>
-          <input type="number" class="field-input" id="fSP" placeholder="0.00" inputmode="decimal">
-        </div>
-      </div>
-      <div class="two-col">
-        <div class="field-group">
-          <label class="field-label">Shelf Position</label>
-          <select class="field-input" id="fShelf">
-            <option value="">Select...</option>
-            <option>Eye Level</option>
-            <option>Top Shelf</option>
-            <option>Middle Shelf</option>
-            <option>Bottom Shelf</option>
-            <option>Floor Stack</option>
-            <option>Gondola End</option>
-            <option>Checkout</option>
-          </select>
-        </div>
-        <div class="field-group">
-          <label class="field-label">Facings</label>
-          <input type="number" class="field-input" id="fFacings" placeholder="# facings" inputmode="numeric">
-        </div>
-      </div>
-      <div class="two-col">
-        <div class="field-group">
-          <label class="field-label">Availability</label>
-          <select class="field-input" id="fAvail">
-            <option value="">...</option>
-            <option>In Stock</option>
-            <option>Low Stock</option>
-            <option>Out of Stock</option>
-          </select>
-        </div>
-        <div class="field-group">
-          <label class="field-label">Promo?</label>
-          <select class="field-input" id="fPromo">
-            <option value="">...</option>
-            <option>None</option>
-            <option>Discount</option>
-            <option>BOGO</option>
-            <option>Bundle</option>
-            <option>Cashback</option>
-          </select>
-        </div>
-      </div>
-      <div class="field-group">
-        <label class="field-label">Notes</label>
-        <input type="text" class="field-input" id="fNotes" placeholder="Any observations...">
-      </div>
+<div class="two-col">
+<div class="field-group">
+<label class="field-label">MRP (₹) <span>*</span></label>
+<input type="number" class="field-input" id="fMRP" placeholder="0.00" inputmode="decimal">
+</div>
+<div class="field-group">
+<label class="field-label">Selling Price (₹)</label>
+<input type="number" class="field-input" id="fSP" placeholder="0.00" inputmode="decimal">
+</div>
+</div>
+<div class="two-col">
+<div class="field-group">
+<label class="field-label">Shelf Position</label>
+<select class="field-input" id="fShelf">
+<option value="">Select...</option>
+<option>Eye Level</option>
+<option>Top Shelf</option>
+<option>Middle Shelf</option>
+<option>Bottom Shelf</option>
+<option>Floor Stack</option>
+<option>Gondola End</option>
+<option>Checkout</option>
+</select>
+</div>
+<div class="field-group">
+<label class="field-label">Facings</label>
+<input type="number" class="field-input" id="fFacings" placeholder="# facings" inputmode="numeric">
+</div>
+</div>
 
-      <div class="btn-row">
-        <button class="btn-save" id="btnSave" onclick="saveRecord()">+ SAVE PRODUCT</button>
-        <button class="btn-clear" onclick="clearForm()">CLEAR</button>
-      </div>
-      <button class="btn-same" id="btnSameProduct" onclick="sameProductNewSize()">
-        ↻ SAME PRODUCT — DIFFERENT SIZE / PRICE
-      </button>
-    </div>
+<!-- NEW: Row occupancy fields -->
+<div class="field-group">
+<div class="row-checkbox-row">
+<input type="checkbox" id="rowMultipleCheckbox" onchange="toggleRowFields()">
+<label for="rowMultipleCheckbox">📐 Multiple rows / entire shelf</label>
+</div>
+<div id="rowRangeContainer" style="display:none;">
+<div class="row-range-group">
+<div class="field-group">
+<label class="field-label">Row from (top = 1)</label>
+<input type="number" class="field-input" id="fRowStart" min="1" step="1" placeholder="1">
+</div>
+<div class="field-group">
+<label class="field-label">Row to (bottom)</label>
+<input type="number" class="field-input" id="fRowEnd" min="1" step="1" placeholder="6">
+</div>
+</div>
+<div class="row-help" id="rowHelpText"></div>
+</div>
+</div>
 
-    <div class="records-card">
-      <div class="records-header">
-        <div class="records-title">Saved Products</div>
-        <button class="btn-export" onclick="exportCSV()">↓ EXPORT CSV</button>
-      </div>
-      <div id="recordsList">
-        <div class="records-empty">No products scanned yet.<br>Start scanning to build your list.</div>
-      </div>
-    </div>
+<div class="two-col">
+<div class="field-group">
+<label class="field-label">Availability</label>
+<select class="field-input" id="fAvail">
+<option value="">...</option>
+<option>In Stock</option>
+<option>Low Stock</option>
+<option>Out of Stock</option>
+</select>
+</div>
+<div class="field-group">
+<label class="field-label">Promo?</label>
+<select class="field-input" id="fPromo">
+<option value="">...</option>
+<option>None</option>
+<option>Discount</option>
+<option>BOGO</option>
+<option>Bundle</option>
+<option>Cashback</option>
+</select>
+</div>
+</div>
+<div class="field-group">
+<label class="field-label">Notes</label>
+<input type="text" class="field-input" id="fNotes" placeholder="Any observations...">
+</div>
 
-  </div>
+<div class="btn-row">
+<button class="btn-save" id="btnSave" onclick="saveRecord()">+ SAVE PRODUCT</button>
+<button class="btn-clear" onclick="clearForm()">CLEAR</button>
+</div>
+<button class="btn-same" id="btnSameProduct" onclick="sameProductNewSize()">
+↻ SAME PRODUCT — DIFFERENT SIZE / PRICE
+</button>
+</div>
+
+<div class="records-card">
+<div class="records-header">
+<div class="records-title">Saved Products</div>
+<button class="btn-export" onclick="exportCSV()">↓ EXPORT CSV</button>
+</div>
+<div id="recordsList">
+<div class="records-empty">No products scanned yet.<br>Start scanning to build your list.</div>
+</div>
+</div>
+
+</div>
 </div>
 
 <!-- VIEW MODAL -->
 <div class="modal-overlay" id="viewModal" onclick="closeView(event)">
-  <div class="modal-card" onclick="event.stopPropagation()">
-    <div class="modal-header">
-      <div class="modal-title">Product Record</div>
-      <button class="modal-close" onclick="closeView()">&times;</button>
-    </div>
-    <div class="modal-body" id="viewBody"></div>
-    <div class="modal-actions">
-      <button class="ma-edit" onclick="editFromView()">✏ EDIT</button>
-      <button class="ma-copy" onclick="copyFromView()">⎘ COPY</button>
-    </div>
-  </div>
+<div class="modal-card" onclick="event.stopPropagation()">
+<div class="modal-header">
+<div class="modal-title">Product Record</div>
+<button class="modal-close" onclick="closeView()">&times;</button>
+</div>
+<div class="modal-body" id="viewBody"></div>
+<div class="modal-actions">
+<button class="ma-edit" onclick="editFromView()">✏ EDIT</button>
+<button class="ma-copy" onclick="copyFromView()">⎘ COPY</button>
+</div>
+</div>
 </div>
 
 <div class="toast" id="toast"></div>
 
 <script>
+// ---------- GLOBAL ----------
 let records = JSON.parse(localStorage.getItem('sf_records') || '[]');
 let currentStore = '';
+let currentShelfRows = 6;    // default
 let scannerActive = false;
 let lastScanned = null;
 let scanCooldown = false;
 let lastSavedProduct = null;
 let selectedStore = '';
-let editingIndex = null;     // null = new record, number = editing record at that index
-let viewingIndex = null;     // currently viewed record index (for modal Edit/Copy buttons)
-let privateLabelValue = '';  // 'yes' | 'no' | ''
-let appMode = localStorage.getItem('sf_mode') || 'online';  // 'online' | 'offline'
+let editingIndex = null;
+let viewingIndex = null;
+let privateLabelValue = '';
+let appMode = localStorage.getItem('sf_mode') || 'online';
 
-// ── STORE PICKER ──
+// Store-specific shelf rows (persist)
+let storeRowsMap = JSON.parse(localStorage.getItem('sf_store_rows') || '{}');
+
+// ---------- HELPER: row position mapping ----------
+function getRowPosition(rowNum, totalRows) {
+    if (!rowNum) return '';
+    const r = parseInt(rowNum);
+    const t = parseInt(totalRows);
+    if (t === 6) {
+        const map6 = {1:'Top Shelf', 2:'Upper-Mid Shelf', 3:'Eye-Level Shelf', 4:'Mid-Lower Shelf', 5:'Lower Shelf', 6:'Bottom Shelf'};
+        return map6[r] || `Row ${r}`;
+    } else if (t === 7) {
+        const map7 = {1:'Top Shelf', 2:'Upper-Top Shelf', 3:'Upper-Mid Shelf', 4:'Eye-Level Shelf', 5:'Mid-Lower Shelf', 6:'Lower Shelf', 7:'Bottom Shelf'};
+        return map7[r] || `Row ${r}`;
+    } else {
+        // generic: first = Top, last = Bottom, approximate middle = Eye level
+        if (r === 1) return 'Top Shelf';
+        if (r === t) return 'Bottom Shelf';
+        if (r === Math.floor(t/2) || r === Math.ceil(t/2)) return 'Eye-Level Shelf';
+        return `Row ${r}`;
+    }
+}
+
+function formatRowRange(start, end, totalRows) {
+    if (!start || !end) return '';
+    const s = parseInt(start);
+    const e = parseInt(end);
+    if (isNaN(s) || isNaN(e)) return '';
+    const startPos = getRowPosition(s, totalRows);
+    const endPos = getRowPosition(e, totalRows);
+    let range = `Rows ${s}‑${e}`;
+    if (startPos && endPos) range += ` (${startPos} → ${endPos})`;
+    if (s === 1 && e === totalRows) range = `Full shelf: ${range}`;
+    return range;
+}
+
+// Update row help text based on current shelf rows
+function updateRowHelpText() {
+    const total = currentShelfRows;
+    let help = '';
+    if (total === 6) {
+        help = '1=Top | 2=Upper-Mid | 3=Eye-Level | 4=Mid-Lower | 5=Lower | 6=Bottom';
+    } else if (total === 7) {
+        help = '1=Top | 2=Upper-Top | 3=Upper-Mid | 4=Eye-Level | 5=Mid-Lower | 6=Lower | 7=Bottom';
+    } else {
+        help = `1=Top, ${total}=Bottom, middle≈Eye level. Min 1, max ${total}.`;
+    }
+    document.getElementById('rowHelpText').innerText = help;
+}
+
+// Toggle row fields visibility
+function toggleRowFields() {
+    const chk = document.getElementById('rowMultipleCheckbox');
+    const container = document.getElementById('rowRangeContainer');
+    container.style.display = chk.checked ? 'block' : 'none';
+    if (!chk.checked) {
+        document.getElementById('fRowStart').value = '';
+        document.getElementById('fRowEnd').value = '';
+    } else {
+        // set min/max attributes
+        const startInp = document.getElementById('fRowStart');
+        const endInp = document.getElementById('fRowEnd');
+        startInp.min = 1;
+        startInp.max = currentShelfRows;
+        endInp.min = 1;
+        endInp.max = currentShelfRows;
+        updateRowHelpText();
+    }
+}
+
+// ---------- STORE PICKER ----------
 function selectStore(btn, store) {
-  document.querySelectorAll('.store-btn').forEach(b => b.classList.remove('selected'));
-  btn.classList.add('selected');
-  const otherInput = document.getElementById('otherStoreInput');
-  if (store === 'other') {
-    otherInput.classList.add('show');
-    otherInput.focus();
-    selectedStore = '';
-  } else {
-    otherInput.classList.remove('show');
-    selectedStore = store;
-  }
-  checkConfirmReady();
+    document.querySelectorAll('.store-btn').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+    const otherInput = document.getElementById('otherStoreInput');
+    if (store === 'other') {
+        otherInput.classList.add('show');
+        otherInput.focus();
+        selectedStore = '';
+    } else {
+        otherInput.classList.remove('show');
+        selectedStore = store;
+        // load stored rows for this store if exists
+        const savedRows = storeRowsMap[store];
+        if (savedRows) document.getElementById('storeShelfRows').value = savedRows;
+        else document.getElementById('storeShelfRows').value = 6;
+    }
+    checkConfirmReady();
 }
 
 document.getElementById('otherStoreInput').addEventListener('input', function() {
-  selectedStore = this.value.trim();
-  checkConfirmReady();
+    selectedStore = this.value.trim();
+    if (selectedStore) {
+        const savedRows = storeRowsMap[selectedStore];
+        if (savedRows) document.getElementById('storeShelfRows').value = savedRows;
+        else document.getElementById('storeShelfRows').value = 6;
+    }
+    checkConfirmReady();
 });
 
 function checkConfirmReady() {
-  document.getElementById('btnConfirm').classList.toggle('ready', !!selectedStore);
+    document.getElementById('btnConfirm').classList.toggle('ready', !!selectedStore);
 }
 
 function confirmStore() {
-  if (!selectedStore) return;
-  currentStore = selectedStore;
-  document.getElementById('storeBannerName').textContent = currentStore;
-  document.getElementById('storePicker').style.display = 'none';
-  document.getElementById('mainApp').style.display = 'block';
-  applyMode();
-  renderRecords();
+    if (!selectedStore) return;
+    currentStore = selectedStore;
+    // get shelf rows value
+    let rowsInput = document.getElementById('storeShelfRows').value;
+    let rows = parseInt(rowsInput);
+    if (isNaN(rows) || rows < 1) rows = 6;
+    if (rows > 100) rows = 100;
+    currentShelfRows = rows;
+    // store for this store
+    storeRowsMap[currentStore] = currentShelfRows;
+    localStorage.setItem('sf_store_rows', JSON.stringify(storeRowsMap));
+    
+    document.getElementById('storeBannerName').textContent = currentStore;
+    document.getElementById('shelfRowsBadge').textContent = currentShelfRows + ' rows';
+    document.getElementById('storePicker').style.display = 'none';
+    document.getElementById('mainApp').style.display = 'block';
+    applyMode();
+    renderRecords();
 }
 
 function changeStore() {
-  selectedStore = '';
-  document.querySelectorAll('.store-btn').forEach(b => b.classList.remove('selected'));
-  document.getElementById('otherStoreInput').classList.remove('show');
-  document.getElementById('otherStoreInput').value = '';
-  document.getElementById('btnConfirm').classList.remove('ready');
-  document.getElementById('storePicker').style.display = 'flex';
-  document.getElementById('mainApp').style.display = 'none';
-  if (scannerActive) stopScanner();
+    selectedStore = '';
+    document.querySelectorAll('.store-btn').forEach(b => b.classList.remove('selected'));
+    document.getElementById('otherStoreInput').classList.remove('show');
+    document.getElementById('otherStoreInput').value = '';
+    document.getElementById('btnConfirm').classList.remove('ready');
+    document.getElementById('storePicker').style.display = 'flex';
+    document.getElementById('mainApp').style.display = 'none';
+    if (scannerActive) stopScanner();
 }
 
-// ── ONLINE / OFFLINE MODE ──
+// ---------- MODES ----------
 function applyMode() {
-  const isOffline = appMode === 'offline';
-  const toggle = document.getElementById('modeToggle');
-  toggle.textContent = isOffline ? '📴 OFFLINE' : '🌐 ONLINE';
-  toggle.classList.toggle('offline', isOffline);
-
-  document.getElementById('offlineHint').classList.toggle('visible', isOffline);
-  document.querySelector('.scanner-card').classList.toggle('hidden', isOffline);
-  document.getElementById('btnNewManual').classList.toggle('visible', isOffline);
-
-  // hide the API status bar in offline mode (it's only for fetch feedback)
-  const statusBar = document.getElementById('statusBar');
-  if (isOffline) statusBar.classList.add('hidden');
-  else statusBar.classList.remove('hidden');
-
-  // make barcode field editable in offline mode (typed manually off the pack)
-  const bc = document.getElementById('fBarcode');
-  if (isOffline) {
-    bc.removeAttribute('readonly');
-    bc.style.opacity = '1';
-    bc.placeholder = 'Type barcode if visible (optional)';
-  } else {
-    bc.setAttribute('readonly', '');
-    bc.style.opacity = '.6';
-    bc.placeholder = 'Barcode';
-  }
-
-  // safety: stop camera if user flips to offline mid-scan
-  if (isOffline && scannerActive) stopScanner();
+    const isOffline = appMode === 'offline';
+    const toggle = document.getElementById('modeToggle');
+    toggle.textContent = isOffline ? '📴 OFFLINE' : '🌐 ONLINE';
+    toggle.classList.toggle('offline', isOffline);
+    document.getElementById('offlineHint').classList.toggle('visible', isOffline);
+    document.querySelector('.scanner-card').classList.toggle('hidden', isOffline);
+    document.getElementById('btnNewManual').classList.toggle('visible', isOffline);
+    const statusBar = document.getElementById('statusBar');
+    if (isOffline) statusBar.classList.add('hidden');
+    else statusBar.classList.remove('hidden');
+    const bc = document.getElementById('fBarcode');
+    if (isOffline) {
+        bc.removeAttribute('readonly');
+        bc.style.opacity = '1';
+        bc.placeholder = 'Type barcode if visible (optional)';
+    } else {
+        bc.setAttribute('readonly', '');
+        bc.style.opacity = '.6';
+        bc.placeholder = 'Barcode';
+    }
+    if (isOffline && scannerActive) stopScanner();
 }
 
 function toggleMode() {
-  appMode = (appMode === 'online') ? 'offline' : 'online';
-  localStorage.setItem('sf_mode', appMode);
-  applyMode();
-  showToast(appMode === 'offline' ? 'Switched to OFFLINE — manual entry' : 'Switched to ONLINE — barcode lookup');
+    appMode = (appMode === 'online') ? 'offline' : 'online';
+    localStorage.setItem('sf_mode', appMode);
+    applyMode();
+    showToast(appMode === 'offline' ? 'Switched to OFFLINE — manual entry' : 'Switched to ONLINE — barcode lookup');
 }
 
 function startNewManualEntry() {
-  // fresh entry, not editing
-  editingIndex = null;
-  document.getElementById('formCard').classList.remove('editing');
-  document.getElementById('formCard').classList.add('visible');
-  removeSearchFallback();
-
-  const tag = document.getElementById('formModeTag');
-  tag.textContent = 'MANUAL ENTRY';
-  tag.className = 'auto-tag';
-  document.getElementById('formTitleText').textContent = 'New Product';
-  const saveBtn = document.getElementById('btnSave');
-  saveBtn.textContent = '+ SAVE PRODUCT';
-  saveBtn.classList.remove('editing');
-
-  // clear all fields
-  ['fName','fBrand','fPackSize','fCategory','fBarcode','fIngredients','fNutrition','fAdditives','fScores','fManufacturer','fMRP','fSP','fFacings','fNotes'].forEach(id => {
-    const el = document.getElementById(id);
-    el.value = '';
-    el.classList.remove('auto-filled', 'auto-filled-upc');
-  });
-  ['fShelf','fAvail','fPromo'].forEach(id => document.getElementById(id).value = '');
-  setPrivateLabel('');
-  document.getElementById('btnSameProduct').classList.remove('visible');
-
-  setTimeout(() => {
-    document.getElementById('formCard').scrollIntoView({behavior:'smooth', block:'start'});
-    document.getElementById('fName').focus();
-  }, 100);
+    editingIndex = null;
+    document.getElementById('formCard').classList.remove('editing');
+    document.getElementById('formCard').classList.add('visible');
+    const tag = document.getElementById('formModeTag');
+    tag.textContent = 'MANUAL ENTRY';
+    tag.className = 'auto-tag';
+    document.getElementById('formTitleText').textContent = 'New Product';
+    const saveBtn = document.getElementById('btnSave');
+    saveBtn.textContent = '+ SAVE PRODUCT';
+    saveBtn.classList.remove('editing');
+    // clear all fields
+    ['fName','fBrand','fPackSize','fCategory','fBarcode','fIngredients','fNutrition','fAdditives','fScores','fManufacturer','fMRP','fSP','fFacings','fNotes','fRowStart','fRowEnd'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.value = '';
+        if (el && id!=='fRowStart' && id!=='fRowEnd') el.classList.remove('auto-filled');
+    });
+    ['fShelf','fAvail','fPromo'].forEach(id => document.getElementById(id).value = '');
+    setPrivateLabel('');
+    document.getElementById('rowMultipleCheckbox').checked = false;
+    toggleRowFields();
+    document.getElementById('btnSameProduct').classList.remove('visible');
+    setTimeout(() => {
+        document.getElementById('formCard').scrollIntoView({behavior:'smooth', block:'start'});
+        document.getElementById('fName').focus();
+    }, 100);
 }
 
-// ── PRIVATE LABEL TOGGLE ──
+// Private label
 function setPrivateLabel(val) {
-  privateLabelValue = val;
-  document.getElementById('plYes').classList.toggle('active', val === 'yes');
-  document.getElementById('plNo').classList.toggle('active', val === 'no');
-  document.getElementById('manufacturerWrap').classList.toggle('show', val === 'yes');
-  if (val !== 'yes') document.getElementById('fManufacturer').value = '';
+    privateLabelValue = val;
+    document.getElementById('plYes').classList.toggle('active', val === 'yes');
+    document.getElementById('plNo').classList.toggle('active', val === 'no');
+    document.getElementById('manufacturerWrap').classList.toggle('show', val === 'yes');
+    if (val !== 'yes') document.getElementById('fManufacturer').value = '';
 }
 
-// ── RECORDS ──
+// ---------- RECORDS ----------
 function renderRecords() {
-  const list = document.getElementById('recordsList');
-  document.getElementById('countBadge').textContent = records.length + ' product' + (records.length !== 1 ? 's' : '');
-  if (!records.length) {
-    list.innerHTML = '<div class="records-empty">No products scanned yet.<br>Start scanning to build your list.</div>';
-    return;
-  }
-  list.innerHTML = records.map((r, i) => `
-    <div class="record-item">
-      <div class="record-num">${i+1}</div>
-      <div class="record-info">
-        <div class="record-name">
-          <span style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis">${escapeHtml(r.name || 'Unknown')}</span>
-          ${r.private_label === 'yes' ? '<span class="pl-pill">PL</span>' : ''}
-        </div>
-        <div class="record-sub">${[r.brand, r.pack_size, r.store].filter(Boolean).map(escapeHtml).join(' · ')}</div>
-      </div>
-      ${r.mrp ? `<div class="record-price">&#8377;${escapeHtml(r.mrp)}</div>` : '<div></div>'}
-      <div class="record-actions">
-        <button class="act-btn view" onclick="viewRecord(${i})">👁 VIEW</button>
-        <button class="act-btn edit" onclick="editRecord(${i})">✏ EDIT</button>
-        <button class="act-btn copy" onclick="copyRecord(${i})">⎘ COPY</button>
-        <button class="act-btn del" onclick="confirmDelete(${i})">✕ DEL</button>
-      </div>
-    </div>
-  `).join('');
+    const list = document.getElementById('recordsList');
+    document.getElementById('countBadge').textContent = records.length + ' product' + (records.length !== 1 ? 's' : '');
+    if (!records.length) {
+        list.innerHTML = '<div class="records-empty">No products scanned yet.<br>Start scanning to build your list.</div>';
+        return;
+    }
+    list.innerHTML = records.map((r, i) => {
+        let rowInfo = '';
+        if (r.row_start && r.row_end) {
+            const totalRowsUsed = r.shelf_rows || currentShelfRows;
+            rowInfo = `<div style="font-size:10px; color:var(--yellow); margin-top:3px;">${formatRowRange(r.row_start, r.row_end, totalRowsUsed)}</div>`;
+        }
+        return `
+        <div class="record-item">
+            <div class="record-num">${i+1}</div>
+            <div class="record-info">
+                <div class="record-name">
+                    <span style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis">${escapeHtml(r.name || 'Unknown')}</span>
+                    ${r.private_label === 'yes' ? '<span class="pl-pill">PL</span>' : ''}
+                </div>
+                <div class="record-sub">${[r.brand, r.pack_size, r.store].filter(Boolean).map(escapeHtml).join(' · ')}</div>
+                ${rowInfo}
+            </div>
+            ${r.mrp ? `<div class="record-price">&#8377;${escapeHtml(r.mrp)}</div>` : '<div></div>'}
+            <div class="record-actions">
+                <button class="act-btn view" onclick="viewRecord(${i})">👁 VIEW</button>
+                <button class="act-btn edit" onclick="editRecord(${i})">✏ EDIT</button>
+                <button class="act-btn copy" onclick="copyRecord(${i})">⎘ COPY</button>
+                <button class="act-btn del" onclick="confirmDelete(${i})">✕ DEL</button>
+            </div>
+        </div>`;
+    }).join('');
 }
 
 function escapeHtml(s) {
-  return String(s ?? '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+    return String(s ?? '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 }
 
 function confirmDelete(i) {
-  if (confirm('Delete "' + (records[i].name || 'this entry') + '"?')) deleteRecord(i);
+    if (confirm('Delete "' + (records[i].name || 'this entry') + '"?')) deleteRecord(i);
 }
 
 function deleteRecord(i) {
-  records.splice(i, 1);
-  localStorage.setItem('sf_records', JSON.stringify(records));
-  renderRecords();
-  showToast('Removed');
+    records.splice(i, 1);
+    localStorage.setItem('sf_records', JSON.stringify(records));
+    renderRecords();
+    showToast('Removed');
 }
 
-// ── VIEW / EDIT / COPY ──
+// View / Edit / Copy
 const FIELD_LABELS = [
-  ['name','Product Name'],
-  ['brand','Brand'],
-  ['pack_size','Pack Size'],
-  ['category','Category'],
-  ['private_label','Private Label'],
-  ['manufacturer','Manufacturer'],
-  ['barcode','Barcode'],
-  ['ingredients','Ingredients'],
-  ['nutrition','Nutrition'],
-  ['additives','Additives'],
-  ['scores','Scores'],
-  ['mrp','MRP (₹)'],
-  ['selling_price','Selling Price (₹)'],
-  ['shelf_position','Shelf Position'],
-  ['facings','Facings'],
-  ['store','Store'],
-  ['availability','Availability'],
-  ['promo','Promo'],
-  ['source','Data Source'],
-  ['notes','Notes'],
-  ['timestamp','Saved At']
+    ['name','Product Name'], ['brand','Brand'], ['pack_size','Pack Size'], ['category','Category'],
+    ['private_label','Private Label'], ['manufacturer','Manufacturer'], ['barcode','Barcode'],
+    ['ingredients','Ingredients'], ['nutrition','Nutrition'], ['additives','Additives'], ['scores','Scores'],
+    ['mrp','MRP (₹)'], ['selling_price','Selling Price (₹)'], ['shelf_position','Shelf Position'],
+    ['facings','Facings'], ['store','Store'], ['availability','Availability'], ['promo','Promo'], ['notes','Notes'],
+    ['row_start','Row Start'], ['row_end','Row End'], ['row_range_display','Shelf Rows'], ['timestamp','Saved At']
 ];
 
 function viewRecord(i) {
-  const r = records[i];
-  if (!r) return;
-  viewingIndex = i;
-  const body = document.getElementById('viewBody');
-  body.innerHTML = FIELD_LABELS.map(([key, label]) => {
-    let val = r[key];
-    if (key === 'private_label') val = val === 'yes' ? 'Yes' : (val === 'no' ? 'No' : '');
-    if (key === 'mrp' && val) val = '₹' + val;
-    if (key === 'selling_price' && val) val = '₹' + val;
-    if (key === 'source') {
-      val = val === 'off' ? 'Open Food Facts' : val === 'upc' ? 'UPCItemDB (verify brand)' : val === 'manual' ? 'Manual entry' : '';
+    const r = records[i];
+    if (!r) return;
+    viewingIndex = i;
+    const body = document.getElementById('viewBody');
+    let rowRangeDisplay = '';
+    if (r.row_start && r.row_end) {
+        const totalRows = r.shelf_rows || currentShelfRows;
+        rowRangeDisplay = formatRowRange(r.row_start, r.row_end, totalRows);
     }
-    const empty = !val;
-    return `
-      <div class="view-row">
-        <div class="view-key">${label}</div>
-        <div class="view-val ${empty ? 'empty' : ''}">${empty ? '—' : escapeHtml(val).replace(/\n/g,'<br>')}</div>
-      </div>`;
-  }).join('');
-  document.getElementById('viewModal').classList.add('show');
+    const extendedRecord = { ...r, row_range_display: rowRangeDisplay || '—' };
+    body.innerHTML = FIELD_LABELS.map(([key, label]) => {
+        let val = extendedRecord[key];
+        if (key === 'private_label') val = val === 'yes' ? 'Yes' : (val === 'no' ? 'No' : '');
+        if ((key === 'mrp' || key === 'selling_price') && val) val = '₹' + val;
+        const empty = !val;
+        return `<div class="view-row"><div class="view-key">${label}</div><div class="view-val ${empty ? 'empty' : ''}">${empty ? '—' : escapeHtml(val).replace(/\n/g,'<br>')}</div></div>`;
+    }).join('');
+    document.getElementById('viewModal').classList.add('show');
 }
 
 function closeView(e) {
-  if (e && e.target.id !== 'viewModal' && e.target.className !== 'modal-close') return;
-  document.getElementById('viewModal').classList.remove('show');
-  viewingIndex = null;
+    if (e && e.target.id !== 'viewModal' && e.target.className !== 'modal-close') return;
+    document.getElementById('viewModal').classList.remove('show');
+    viewingIndex = null;
 }
-
-function editFromView() {
-  if (viewingIndex === null) return;
-  const idx = viewingIndex;
-  document.getElementById('viewModal').classList.remove('show');
-  viewingIndex = null;
-  editRecord(idx);
-}
-
-function copyFromView() {
-  if (viewingIndex === null) return;
-  const idx = viewingIndex;
-  document.getElementById('viewModal').classList.remove('show');
-  viewingIndex = null;
-  copyRecord(idx);
-}
+function editFromView() { if (viewingIndex!==null) { const idx=viewingIndex; closeView(); editRecord(idx); } }
+function copyFromView() { if (viewingIndex!==null) { const idx=viewingIndex; closeView(); copyRecord(idx); } }
 
 function loadIntoForm(r) {
-  document.getElementById('formCard').classList.add('visible');
-  removeSearchFallback();
-  document.getElementById('fName').value          = r.name || '';
-  document.getElementById('fBrand').value         = r.brand || '';
-  document.getElementById('fPackSize').value      = r.pack_size || '';
-  document.getElementById('fCategory').value      = r.category || '';
-  document.getElementById('fBarcode').value       = r.barcode || '';
-  document.getElementById('fIngredients').value   = r.ingredients || '';
-  document.getElementById('fNutrition').value     = r.nutrition || '';
-  document.getElementById('fAdditives').value     = r.additives || '';
-  document.getElementById('fScores').value        = r.scores || '';
-  document.getElementById('fMRP').value           = r.mrp || '';
-  document.getElementById('fSP').value            = r.selling_price || '';
-  document.getElementById('fShelf').value         = r.shelf_position || '';
-  document.getElementById('fFacings').value       = r.facings || '';
-  document.getElementById('fAvail').value         = r.availability || '';
-  document.getElementById('fPromo').value         = r.promo || '';
-  document.getElementById('fNotes').value         = r.notes || '';
-  document.getElementById('fManufacturer').value  = r.manufacturer || '';
-  setPrivateLabel(r.private_label || '');
-  // remove autofill highlight (these are user-loaded, not auto-fetched)
-  document.querySelectorAll('.field-input.auto-filled, .field-input.auto-filled-upc').forEach(el =>
-    el.classList.remove('auto-filled', 'auto-filled-upc'));
-  document.getElementById('btnSameProduct').classList.remove('visible');
+    document.getElementById('formCard').classList.add('visible');
+    document.getElementById('fName').value = r.name || '';
+    document.getElementById('fBrand').value = r.brand || '';
+    document.getElementById('fPackSize').value = r.pack_size || '';
+    document.getElementById('fCategory').value = r.category || '';
+    document.getElementById('fBarcode').value = r.barcode || '';
+    document.getElementById('fIngredients').value = r.ingredients || '';
+    document.getElementById('fNutrition').value = r.nutrition || '';
+    document.getElementById('fAdditives').value = r.additives || '';
+    document.getElementById('fScores').value = r.scores || '';
+    document.getElementById('fMRP').value = r.mrp || '';
+    document.getElementById('fSP').value = r.selling_price || '';
+    document.getElementById('fShelf').value = r.shelf_position || '';
+    document.getElementById('fFacings').value = r.facings || '';
+    document.getElementById('fAvail').value = r.availability || '';
+    document.getElementById('fPromo').value = r.promo || '';
+    document.getElementById('fNotes').value = r.notes || '';
+    document.getElementById('fManufacturer').value = r.manufacturer || '';
+    setPrivateLabel(r.private_label || '');
+    // row fields
+    const hasRows = r.row_start && r.row_end;
+    document.getElementById('rowMultipleCheckbox').checked = hasRows;
+    toggleRowFields();
+    if (hasRows) {
+        document.getElementById('fRowStart').value = r.row_start;
+        document.getElementById('fRowEnd').value = r.row_end;
+    } else {
+        document.getElementById('fRowStart').value = '';
+        document.getElementById('fRowEnd').value = '';
+    }
+    document.querySelectorAll('.field-input.auto-filled').forEach(el => el.classList.remove('auto-filled'));
+    document.getElementById('btnSameProduct').classList.remove('visible');
 }
 
 function editRecord(i) {
-  const r = records[i];
-  if (!r) return;
-  editingIndex = i;
-  loadIntoForm(r);
-  // visual cue: editing mode
-  document.getElementById('formCard').classList.add('editing');
-  const tag = document.getElementById('formModeTag');
-  tag.textContent = 'EDITING #' + (i+1);
-  tag.className = 'auto-tag edit';
-  document.getElementById('formTitleText').textContent = 'Edit Product';
-  const btn = document.getElementById('btnSave');
-  btn.textContent = '✓ UPDATE PRODUCT';
-  btn.classList.add('editing');
-  setTimeout(() => document.getElementById('formCard').scrollIntoView({behavior:'smooth', block:'start'}), 100);
-  showToast('Editing entry #' + (i+1));
+    const r = records[i];
+    if (!r) return;
+    editingIndex = i;
+    loadIntoForm(r);
+    document.getElementById('formCard').classList.add('editing');
+    const tag = document.getElementById('formModeTag');
+    tag.textContent = 'EDITING #' + (i+1);
+    tag.className = 'auto-tag edit';
+    document.getElementById('formTitleText').textContent = 'Edit Product';
+    const btn = document.getElementById('btnSave');
+    btn.textContent = '✓ UPDATE PRODUCT';
+    btn.classList.add('editing');
+    setTimeout(() => document.getElementById('formCard').scrollIntoView({behavior:'smooth', block:'start'}), 100);
+    showToast('Editing entry #' + (i+1));
 }
 
 function copyRecord(i) {
-  const r = records[i];
-  if (!r) return;
-  editingIndex = null;  // copy creates a NEW record
-  loadIntoForm(r);
-  document.getElementById('formCard').classList.remove('editing');
-  const tag = document.getElementById('formModeTag');
-  tag.textContent = 'COPIED FROM #' + (i+1);
-  tag.className = 'auto-tag copy';
-  document.getElementById('formTitleText').textContent = 'New Product (copy)';
-  const btn = document.getElementById('btnSave');
-  btn.textContent = '+ SAVE AS NEW';
-  btn.classList.remove('editing');
-  setTimeout(() => document.getElementById('formCard').scrollIntoView({behavior:'smooth', block:'start'}), 100);
-  showToast('Copied — change anything you need, then save');
-}
-
-// ── STATUS ──
-function showStatus(type, msg) {
-  const bar = document.getElementById('statusBar');
-  bar.className = 'status-bar ' + type;
-  document.getElementById('statusSpinner').style.display = type === 'loading' ? 'block' : 'none';
-  document.getElementById('statusText').textContent = msg;
-  if (type !== 'loading') setTimeout(() => { bar.className = 'status-bar'; }, 3000);
-}
-
-// ── FORMATTERS for autofill ──
-function formatNutrition(n) {
-  if (!n) return '';
-  const map = [
-    ['energy-kcal_100g', 'Energy', 'kcal'],
-    ['fat_100g', 'Fat', 'g'],
-    ['saturated-fat_100g', 'Sat Fat', 'g'],
-    ['carbohydrates_100g', 'Carbs', 'g'],
-    ['sugars_100g', 'Sugars', 'g'],
-    ['fiber_100g', 'Fiber', 'g'],
-    ['proteins_100g', 'Protein', 'g'],
-    ['salt_100g', 'Salt', 'g'],
-    ['sodium_100g', 'Sodium', 'g']
-  ];
-  const items = map
-    .filter(([k]) => n[k] !== undefined && n[k] !== null && n[k] !== '')
-    .map(([k, label, unit]) => `${label}: ${n[k]}${unit}`);
-  return items.join(', ');
-}
-
-function formatAdditives(tags) {
-  if (!tags || !tags.length) return '';
-  return tags.map(t => String(t).replace(/^en:/, '').toUpperCase()).join(', ');
-}
-
-function formatScores(p) {
-  const parts = [];
-  if (p.nutriscore_grade) parts.push('NutriScore: ' + String(p.nutriscore_grade).toUpperCase());
-  if (p.nova_group) parts.push('NOVA: ' + p.nova_group);
-  if (p.ecoscore_grade) parts.push('EcoScore: ' + String(p.ecoscore_grade).toUpperCase());
-  return parts.join(' | ');
-}
-
-// ── UPCITEMDB FALLBACK PARSER ──
-// UPCItemDB often crams brand+name+size into the 'title' field.
-// 'Ching\'s Secret, Schezwan Chutney, 250 Grams(gm)'
-//   → name='Schezwan Chutney', brand="Ching's Secret", size='250 Grams(gm)'
-const SIZE_RE = /\b(\d+(?:\.\d+)?)\s*(grams?|gms?|g|kilograms?|kgs?|kg|millilit(?:re|er)s?|ml|litres?|liters?|l|ounces?|oz|pounds?|lbs?|lb|pieces?|pcs?|count|ct)\b(\s*\([^)]+\))?/i;
-
-function parseUPCItemDBTitle(title, brand = '', size = '') {
-  let name = (title || '').trim();
-  brand = (brand || '').trim();
-  size = (size || '').trim();
-
-  // 1. Pull size out of the title
-  if (!size) {
-    const m = name.match(SIZE_RE);
-    if (m) {
-      size = m[0].trim();
-      name = name.replace(SIZE_RE, '').trim();
-    }
-  }
-
-  // 2. Split brand from name on commas
-  if (!brand && name.includes(',')) {
-    const parts = name.split(',').map(p => p.trim()).filter(Boolean);
-    if (parts.length >= 2) {
-      brand = parts[0];
-      name = parts.slice(1).join(', ');
-    }
-  }
-
-  // 3. Tidy
-  name  = name.replace(/\s+/g, ' ').replace(/^[,\s]+|[,\s]+$/g, '');
-  brand = brand.replace(/^[,\s]+|[,\s]+$/g, '');
-  size  = size.replace(/^[,\s]+|[,\s]+$/g, '');
-
-  return { name, brand, size };
-}
-
-async function lookupUPCItemDB(barcode) {
-  try {
-    const res = await fetch(`https://api.upcitemdb.com/prod/trial/lookup?upc=${barcode}`);
-    if (res.status === 429) return { _error: 'Rate limited (100/day cap)' };
-    if (!res.ok) return { _error: 'HTTP ' + res.status };
-    const data = await res.json();
-    if (!data.items || !data.items.length) return null;
-    const item = data.items[0];
-    const parsed = parseUPCItemDBTitle(item.title || '', item.brand || '', item.size || '');
-    return {
-      name:        parsed.name,
-      brand:       parsed.brand,
-      pack_size:   parsed.size,
-      category:    item.category || '',
-      ingredients: '',
-      nutrition:   '',
-      additives:   '',
-      scores:      ''
-    };
-  } catch (e) {
-    return { _error: e.message || 'Network error' };
-  }
-}
-
-// ── SEARCH FALLBACK (when both APIs miss) ──
-function showSearchFallback(barcode) {
-  removeSearchFallback();
-  const formCard = document.getElementById('formCard');
-  formCard.classList.add('visible');
-  const div = document.createElement('div');
-  div.id = 'searchFallback';
-  div.className = 'search-fallback';
-  div.innerHTML = `
-    <div class="search-fallback-label">Not in any DB — search this barcode online</div>
-    <div class="search-fallback-buttons">
-      <button type="button" onclick="window.open('https://www.google.com/search?q=${encodeURIComponent(barcode)}+product','_blank')">🔍 GOOGLE</button>
-      <button type="button" onclick="window.open('https://www.google.com/search?tbm=shop&q=${encodeURIComponent(barcode)}','_blank')">🛒 SHOPPING</button>
-      <button type="button" onclick="window.open('https://lens.google.com/','_blank')">📷 LENS</button>
-    </div>
-  `;
-  // Insert right after the form title
-  const title = formCard.querySelector('.form-title');
-  if (title && title.nextSibling) {
-    formCard.insertBefore(div, title.nextSibling);
-  } else {
-    formCard.appendChild(div);
-  }
-}
-
-function removeSearchFallback() {
-  const el = document.getElementById('searchFallback');
-  if (el) el.remove();
-}
-
-// ── FETCH (with fallback chain: OFF → UPCItemDB → Google search) ──
-async function fetchProduct(barcode) {
-  showStatus('loading', 'Fetching from Open Food Facts...');
-
-  // 1. Try Open Food Facts (richer data, food-focused)
-  try {
-    const res = await fetch(`https://world.openfoodfacts.org/api/v0/product/${barcode}.json`, {
-      headers: { 'User-Agent': 'SFScanner/1.0' }
-    });
-    if (res.ok) {
-      const data = await res.json();
-      if (data.status === 1) {
-        const p = data.product;
-        showStatus('success', 'Loaded from Open Food Facts');
-        populateForm(barcode, {
-          name:        p.product_name || '',
-          brand:       p.brands || '',
-          pack_size:   p.quantity || '',
-          category:    p.categories ? p.categories.split(',')[0].trim() : '',
-          ingredients: p.ingredients_text || p.ingredients_text_en || '',
-          nutrition:   formatNutrition(p.nutriments),
-          additives:   formatAdditives(p.additives_tags),
-          scores:      formatScores(p)
-        }, 'off');
-        return;
-      }
-    }
-  } catch(e) { /* fall through to UPCItemDB */ }
-
-  // 2. Fallback: UPCItemDB (broader brand coverage incl. non-food)
-  showStatus('loading', 'Not in OFF — trying UPCItemDB...');
-  const upc = await lookupUPCItemDB(barcode);
-  if (upc && !upc._error) {
-    showStatus('success', 'Loaded from UPCItemDB · verify brand & name');
-    populateForm(barcode, upc, 'upc');
-    return;
-  }
-
-  // 3. Both APIs missed — offer Google search shortcuts
-  const errSuffix = upc && upc._error ? ` (${upc._error})` : '';
-  showStatus('error', 'Not found in either DB' + errSuffix);
-  populateForm(barcode, null);
-  showSearchFallback(barcode);
-}
-
-function populateForm(barcode, data, source = '') {
-  // reset edit/copy mode — this is a fresh scan
-  editingIndex = null;
-  document.getElementById('formCard').classList.remove('editing');
-  removeSearchFallback();
-
-  // Set the source tag based on origin
-  const tag = document.getElementById('formModeTag');
-  if (source === 'upc') {
-    tag.textContent = 'AUTO · UPCITEMDB';
-    tag.className = 'auto-tag upc';
-  } else if (source === 'off') {
-    tag.textContent = 'AUTO · OPEN FOOD FACTS';
-    tag.className = 'auto-tag';
-  } else {
-    tag.textContent = data ? 'AUTO-FILLED' : 'MANUAL ENTRY';
-    tag.className = 'auto-tag';
-  }
-  document.getElementById('formTitleText').textContent = 'Product Details';
-
-  const saveBtn = document.getElementById('btnSave');
-  saveBtn.textContent = '+ SAVE PRODUCT';
-  saveBtn.classList.remove('editing');
-
-  // Stash source so saveRecord() can persist it
-  document.getElementById('formCard').dataset.source = source;
-
-  document.getElementById('formCard').classList.add('visible');
-  document.getElementById('fBarcode').value = barcode;
-  document.getElementById('btnSameProduct').classList.remove('visible');
-
-  // reset private label
-  setPrivateLabel('');
-
-  const fields = ['fName','fBrand','fPackSize','fCategory','fIngredients','fNutrition','fAdditives','fScores'];
-  const keys   = ['name', 'brand', 'pack_size', 'category', 'ingredients', 'nutrition', 'additives', 'scores'];
-
-  // UPCItemDB fills get yellow highlight (verify-me cue), OFF fills get green
-  const highlightClass = source === 'upc' ? 'auto-filled-upc' : 'auto-filled';
-
-  fields.forEach((id, i) => {
-    const el = document.getElementById(id);
-    el.classList.remove('auto-filled', 'auto-filled-upc');
-    if (data && data[keys[i]]) {
-      el.value = data[keys[i]];
-      el.classList.add(highlightClass);
-    } else {
-      el.value = '';
-    }
-  });
-
-  // clear notes
-  document.getElementById('fNotes').value = '';
-  document.getElementById('fNotes').classList.remove('auto-filled', 'auto-filled-upc');
-
-  ['fMRP','fSP','fShelf','fFacings','fAvail','fPromo'].forEach(id => {
-    const el = document.getElementById(id);
-    el.value = '';
-    el.classList.remove('auto-filled', 'auto-filled-upc');
-  });
-
-  setTimeout(() => document.getElementById('formCard').scrollIntoView({ behavior:'smooth', block:'start' }), 100);
-}
-
-function clearForm() {
-  document.getElementById('formCard').classList.remove('visible', 'editing');
-  document.getElementById('btnSameProduct').classList.remove('visible');
-  removeSearchFallback();
-  setPrivateLabel('');
-  editingIndex = null;
-  lastScanned = null;
-  lastSavedProduct = null;
-}
-
-// ── SAVE ──
-function saveRecord() {
-  const name = document.getElementById('fName').value.trim();
-  if (!name) { showToast('Product name required!'); return; }
-  if (privateLabelValue === 'yes' && !document.getElementById('fManufacturer').value.trim()) {
-    showToast('Manufacturer name required for private label!'); return;
-  }
-
-  const source = document.getElementById('formCard').dataset.source || 'manual';
-
-  const record = {
-    barcode:        document.getElementById('fBarcode').value,
-    name,
-    brand:          document.getElementById('fBrand').value,
-    pack_size:      document.getElementById('fPackSize').value,
-    category:       document.getElementById('fCategory').value,
-    private_label:  privateLabelValue,
-    manufacturer:   document.getElementById('fManufacturer').value,
-    ingredients:    document.getElementById('fIngredients').value,
-    nutrition:      document.getElementById('fNutrition').value,
-    additives:      document.getElementById('fAdditives').value,
-    scores:         document.getElementById('fScores').value,
-    mrp:            document.getElementById('fMRP').value,
-    selling_price:  document.getElementById('fSP').value,
-    shelf_position: document.getElementById('fShelf').value,
-    facings:        document.getElementById('fFacings').value,
-    store:          currentStore,
-    availability:   document.getElementById('fAvail').value,
-    promo:          document.getElementById('fPromo').value,
-    source:         source,
-    notes:          document.getElementById('fNotes').value,
-    timestamp:      new Date().toLocaleString('en-IN')
-  };
-
-  if (editingIndex !== null) {
-    // preserve original timestamp & source, add updated timestamp
-    record.timestamp = records[editingIndex].timestamp;
-    record.source = records[editingIndex].source || source;
-    record.updated_at = new Date().toLocaleString('en-IN');
-    records[editingIndex] = record;
-    localStorage.setItem('sf_records', JSON.stringify(records));
-    renderRecords();
-    showToast('Entry #' + (editingIndex + 1) + ' updated!');
+    const r = records[i];
+    if (!r) return;
     editingIndex = null;
-    // reset form mode
+    loadIntoForm(r);
+    document.getElementById('formCard').classList.remove('editing');
+    const tag = document.getElementById('formModeTag');
+    tag.textContent = 'COPIED FROM #' + (i+1);
+    tag.className = 'auto-tag copy';
+    document.getElementById('formTitleText').textContent = 'New Product (copy)';
+    const btn = document.getElementById('btnSave');
+    btn.textContent = '+ SAVE AS NEW';
+    btn.classList.remove('editing');
+    setTimeout(() => document.getElementById('formCard').scrollIntoView({behavior:'smooth', block:'start'}), 100);
+    showToast('Copied — change anything you need, then save');
+}
+
+// Status & Fetch (unchanged except we keep row fields)
+function showStatus(type, msg) {
+    const bar = document.getElementById('statusBar');
+    bar.className = 'status-bar ' + type;
+    document.getElementById('statusSpinner').style.display = type === 'loading' ? 'block' : 'none';
+    document.getElementById('statusText').textContent = msg;
+    if (type !== 'loading') setTimeout(() => { bar.className = 'status-bar'; }, 3000);
+}
+
+function formatNutrition(n) { if(!n) return ''; const map=[['energy-kcal_100g','Energy','kcal'],['fat_100g','Fat','g'],['saturated-fat_100g','Sat Fat','g'],['carbohydrates_100g','Carbs','g'],['sugars_100g','Sugars','g'],['fiber_100g','Fiber','g'],['proteins_100g','Protein','g'],['salt_100g','Salt','g'],['sodium_100g','Sodium','g']]; return map.filter(([k])=>n[k]!==undefined&&n[k]!==null&&n[k]!=='').map(([k,label,unit])=>`${label}: ${n[k]}${unit}`).join(', '); }
+function formatAdditives(tags) { if(!tags||!tags.length) return ''; return tags.map(t=>String(t).replace(/^en:/,'').toUpperCase()).join(', '); }
+function formatScores(p) { const parts=[]; if(p.nutriscore_grade) parts.push('NutriScore: '+String(p.nutriscore_grade).toUpperCase()); if(p.nova_group) parts.push('NOVA: '+p.nova_group); if(p.ecoscore_grade) parts.push('EcoScore: '+String(p.ecoscore_grade).toUpperCase()); return parts.join(' | '); }
+
+async function fetchProduct(barcode) {
+    showStatus('loading', 'Fetching product data...');
+    try {
+        const res = await fetch(`https://world.openfoodfacts.org/api/v0/product/${barcode}.json`, { headers: { 'User-Agent': 'SFScanner/1.0' } });
+        if (!res.ok) throw new Error('HTTP '+res.status);
+        const data = await res.json();
+        if (data.status !== 1) { showStatus('error', 'Product not found — fill manually'); populateForm(barcode, null); return; }
+        const p = data.product;
+        showStatus('success', 'Product data loaded');
+        populateForm(barcode, {
+            name: p.product_name || '',
+            brand: p.brands || '',
+            pack_size: p.quantity || '',
+            category: p.categories ? p.categories.split(',')[0].trim() : '',
+            ingredients: p.ingredients_text || p.ingredients_text_en || '',
+            nutrition: formatNutrition(p.nutriments),
+            additives: formatAdditives(p.additives_tags),
+            scores: formatScores(p)
+        });
+    } catch(e) { showStatus('error', 'Fetch failed — fill manually'); populateForm(barcode, null); }
+}
+
+function populateForm(barcode, data) {
+    editingIndex = null;
     document.getElementById('formCard').classList.remove('editing');
     const tag = document.getElementById('formModeTag');
     tag.textContent = 'AUTO-FILLED';
     tag.className = 'auto-tag';
     document.getElementById('formTitleText').textContent = 'Product Details';
+    const saveBtn = document.getElementById('btnSave');
+    saveBtn.textContent = '+ SAVE PRODUCT';
+    saveBtn.classList.remove('editing');
+    document.getElementById('formCard').classList.add('visible');
+    document.getElementById('fBarcode').value = barcode;
+    document.getElementById('btnSameProduct').classList.remove('visible');
+    setPrivateLabel('');
+    const fields = ['fName','fBrand','fPackSize','fCategory','fIngredients','fNutrition','fAdditives','fScores'];
+    const keys   = ['name','brand','pack_size','category','ingredients','nutrition','additives','scores'];
+    fields.forEach((id,i) => {
+        const el = document.getElementById(id);
+        if (data && data[keys[i]]) { el.value = data[keys[i]]; el.classList.add('auto-filled'); }
+        else { el.value = ''; el.classList.remove('auto-filled'); }
+    });
+    document.getElementById('fNotes').value = '';
+    document.getElementById('fNotes').classList.remove('auto-filled');
+    ['fMRP','fSP','fShelf','fFacings','fAvail','fPromo','fRowStart','fRowEnd'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) { el.value = ''; el.classList.remove('auto-filled'); }
+    });
+    document.getElementById('rowMultipleCheckbox').checked = false;
+    toggleRowFields();
+    setTimeout(() => document.getElementById('formCard').scrollIntoView({ behavior:'smooth', block:'start' }), 100);
+}
+
+function clearForm() {
+    document.getElementById('formCard').classList.remove('visible', 'editing');
+    document.getElementById('btnSameProduct').classList.remove('visible');
+    setPrivateLabel('');
+    editingIndex = null;
+    lastScanned = null;
+    lastSavedProduct = null;
+    document.getElementById('rowMultipleCheckbox').checked = false;
+    toggleRowFields();
+}
+
+function saveRecord() {
+    const name = document.getElementById('fName').value.trim();
+    if (!name) { showToast('Product name required!'); return; }
+    if (privateLabelValue === 'yes' && !document.getElementById('fManufacturer').value.trim()) {
+        showToast('Manufacturer name required for private label!'); return;
+    }
+    const multipleRows = document.getElementById('rowMultipleCheckbox').checked;
+    let row_start = '', row_end = '';
+    if (multipleRows) {
+        row_start = document.getElementById('fRowStart').value;
+        row_end = document.getElementById('fRowEnd').value;
+        if (!row_start || !row_end) {
+            showToast('Please enter both row start and row end'); return;
+        }
+        let s = parseInt(row_start), e = parseInt(row_end);
+        if (isNaN(s) || isNaN(e) || s < 1 || e < 1 || s > currentShelfRows || e > currentShelfRows || s > e) {
+            showToast(`Invalid row range (1-${currentShelfRows}, start ≤ end)`); return;
+        }
+    }
+    const record = {
+        barcode: document.getElementById('fBarcode').value,
+        name,
+        brand: document.getElementById('fBrand').value,
+        pack_size: document.getElementById('fPackSize').value,
+        category: document.getElementById('fCategory').value,
+        private_label: privateLabelValue,
+        manufacturer: document.getElementById('fManufacturer').value,
+        ingredients: document.getElementById('fIngredients').value,
+        nutrition: document.getElementById('fNutrition').value,
+        additives: document.getElementById('fAdditives').value,
+        scores: document.getElementById('fScores').value,
+        mrp: document.getElementById('fMRP').value,
+        selling_price: document.getElementById('fSP').value,
+        shelf_position: document.getElementById('fShelf').value,
+        facings: document.getElementById('fFacings').value,
+        store: currentStore,
+        availability: document.getElementById('fAvail').value,
+        promo: document.getElementById('fPromo').value,
+        notes: document.getElementById('fNotes').value,
+        row_start: multipleRows ? row_start : '',
+        row_end: multipleRows ? row_end : '',
+        shelf_rows: currentShelfRows,  // store the row count used at save time
+        timestamp: new Date().toLocaleString('en-IN')
+    };
+    if (editingIndex !== null) {
+        record.timestamp = records[editingIndex].timestamp;
+        record.updated_at = new Date().toLocaleString('en-IN');
+        // preserve old shelf_rows if not overwritten? but we keep current
+        records[editingIndex] = record;
+        localStorage.setItem('sf_records', JSON.stringify(records));
+        renderRecords();
+        showToast('Entry #' + (editingIndex+1) + ' updated!');
+        editingIndex = null;
+        document.getElementById('formCard').classList.remove('editing');
+        const tag = document.getElementById('formModeTag');
+        tag.textContent = 'AUTO-FILLED';
+        tag.className = 'auto-tag';
+        document.getElementById('formTitleText').textContent = 'Product Details';
+        const btn = document.getElementById('btnSave');
+        btn.textContent = '+ SAVE PRODUCT';
+        btn.classList.remove('editing');
+        document.getElementById('formCard').classList.remove('visible');
+        return;
+    }
+    records.push(record);
+    localStorage.setItem('sf_records', JSON.stringify(records));
+    lastSavedProduct = record;
+    renderRecords();
+    showToast('Product saved!');
+    document.getElementById('btnSameProduct').classList.add('visible');
+    // clear only price/stock/row fields for next scan
+    ['fMRP','fSP','fFacings','fAvail','fPromo','fRowStart','fRowEnd'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('fShelf').value = '';
+    document.getElementById('fNotes').value = '';
+    document.getElementById('rowMultipleCheckbox').checked = false;
+    toggleRowFields();
     const btn = document.getElementById('btnSave');
     btn.textContent = '+ SAVE PRODUCT';
-    btn.classList.remove('editing');
-    document.getElementById('formCard').classList.remove('visible');
-    return;
-  }
-
-  records.push(record);
-  localStorage.setItem('sf_records', JSON.stringify(records));
-  lastSavedProduct = record;
-  renderRecords();
-  showToast('Product saved!');
-
-  document.getElementById('btnSameProduct').classList.add('visible');
-
-  // Clear only variable fields, keep product info visible
-  ['fMRP','fSP','fFacings','fAvail','fPromo'].forEach(id => document.getElementById(id).value = '');
-  document.getElementById('fShelf').value = '';
-  document.getElementById('fNotes').value = '';
-
-  // reset save button label in case it was "+ SAVE AS NEW" from copy
-  const btn = document.getElementById('btnSave');
-  btn.textContent = '+ SAVE PRODUCT';
-  const tag = document.getElementById('formModeTag');
-  tag.textContent = 'AUTO-FILLED';
-  tag.className = 'auto-tag';
-  document.getElementById('formTitleText').textContent = 'Product Details';
+    const tag = document.getElementById('formModeTag');
+    tag.textContent = 'AUTO-FILLED';
+    tag.className = 'auto-tag';
+    document.getElementById('formTitleText').textContent = 'Product Details';
 }
 
-// ── SAME PRODUCT NEW SIZE ──
 function sameProductNewSize() {
-  if (!lastSavedProduct) return;
-  document.getElementById('fName').value         = lastSavedProduct.name;
-  document.getElementById('fBrand').value        = lastSavedProduct.brand;
-  document.getElementById('fCategory').value     = lastSavedProduct.category;
-  document.getElementById('fIngredients').value  = lastSavedProduct.ingredients || '';
-  document.getElementById('fNutrition').value    = lastSavedProduct.nutrition || '';
-  document.getElementById('fAdditives').value    = lastSavedProduct.additives || '';
-  document.getElementById('fScores').value       = lastSavedProduct.scores || '';
-  document.getElementById('fManufacturer').value = lastSavedProduct.manufacturer || '';
-  setPrivateLabel(lastSavedProduct.private_label || '');
-
-  document.getElementById('fPackSize').value = '';
-  document.getElementById('fBarcode').value  = '';
-  document.getElementById('fNotes').value    = '';
-
-  ['fMRP','fSP','fFacings','fAvail','fPromo'].forEach(id => document.getElementById(id).value = '');
-  document.getElementById('fShelf').value = '';
-
-  ['fName','fBrand','fCategory','fIngredients','fNutrition','fAdditives','fScores'].forEach(id =>
-    document.getElementById(id).classList.add('auto-filled'));
-  ['fPackSize','fBarcode'].forEach(id => document.getElementById(id).classList.remove('auto-filled', 'auto-filled-upc'));
-
-  document.getElementById('btnSameProduct').classList.remove('visible');
-  showToast('Details carried over — enter new size & price');
-  setTimeout(() => document.getElementById('fPackSize').focus(), 150);
+    if (!lastSavedProduct) return;
+    document.getElementById('fName').value = lastSavedProduct.name;
+    document.getElementById('fBrand').value = lastSavedProduct.brand;
+    document.getElementById('fCategory').value = lastSavedProduct.category;
+    document.getElementById('fIngredients').value = lastSavedProduct.ingredients || '';
+    document.getElementById('fNutrition').value = lastSavedProduct.nutrition || '';
+    document.getElementById('fAdditives').value = lastSavedProduct.additives || '';
+    document.getElementById('fScores').value = lastSavedProduct.scores || '';
+    document.getElementById('fManufacturer').value = lastSavedProduct.manufacturer || '';
+    setPrivateLabel(lastSavedProduct.private_label || '');
+    document.getElementById('fPackSize').value = '';
+    document.getElementById('fBarcode').value = '';
+    document.getElementById('fNotes').value = '';
+    ['fMRP','fSP','fFacings','fAvail','fPromo','fRowStart','fRowEnd'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('fShelf').value = '';
+    document.getElementById('rowMultipleCheckbox').checked = false;
+    toggleRowFields();
+    ['fName','fBrand','fCategory','fIngredients','fNutrition','fAdditives','fScores'].forEach(id =>
+        document.getElementById(id).classList.add('auto-filled'));
+    ['fPackSize','fBarcode'].forEach(id => document.getElementById(id).classList.remove('auto-filled'));
+    document.getElementById('btnSameProduct').classList.remove('visible');
+    showToast('Details carried over — enter new size & price');
+    setTimeout(() => document.getElementById('fPackSize').focus(), 150);
 }
 
-// ── EXPORT ──
+// Export CSV with row columns
 function exportCSV() {
-  if (!records.length) { showToast('No records to export'); return; }
-  const headers = ['Barcode','Product Name','Brand','Pack Size','Category','Private Label','Manufacturer','Ingredients','Nutrition','Additives','Scores','MRP','Selling Price','Shelf Position','Facings','Store','Availability','Promo','Source','Notes','Timestamp','Updated At'];
-  const keys    = ['barcode','name','brand','pack_size','category','private_label','manufacturer','ingredients','nutrition','additives','scores','mrp','selling_price','shelf_position','facings','store','availability','promo','source','notes','timestamp','updated_at'];
-  const csv = [headers.join(','), ...records.map(r => keys.map(k => `"${String(r[k] || '').replace(/"/g,'""').replace(/\n/g,' ')}"`).join(','))].join('\n');
-  const a = Object.assign(document.createElement('a'), {
-    href: URL.createObjectURL(new Blob([csv], {type:'text/csv'})),
-    download: 'SF_Scan_' + currentStore.replace(/\s+/g,'_') + '_' + new Date().toISOString().slice(0,10) + '.csv'
-  });
-  a.click();
-  showToast('CSV exported!');
+    if (!records.length) { showToast('No records to export'); return; }
+    const headers = ['Barcode','Product Name','Brand','Pack Size','Category','Private Label','Manufacturer',
+        'Ingredients','Nutrition','Additives','Scores','MRP','Selling Price','Shelf Position','Facings','Store',
+        'Availability','Promo','Notes','Row Start','Row End','Row Range Display','Timestamp','Updated At'];
+    const keys = ['barcode','name','brand','pack_size','category','private_label','manufacturer','ingredients',
+        'nutrition','additives','scores','mrp','selling_price','shelf_position','facings','store','availability',
+        'promo','notes','row_start','row_end','row_range_display','timestamp','updated_at'];
+    const csvRows = [headers.join(',')];
+    for (const r of records) {
+        let rowRangeDisplay = '';
+        if (r.row_start && r.row_end) {
+            const total = r.shelf_rows || currentShelfRows;
+            rowRangeDisplay = formatRowRange(r.row_start, r.row_end, total);
+        }
+        const extended = { ...r, row_range_display: rowRangeDisplay };
+        const row = keys.map(k => {
+            let val = extended[k] !== undefined ? extended[k] : '';
+            if (k === 'private_label') val = val === 'yes' ? 'Yes' : (val === 'no' ? 'No' : '');
+            return `"${String(val).replace(/"/g,'""').replace(/\n/g,' ')}"`;
+        }).join(',');
+        csvRows.push(row);
+    }
+    const blob = new Blob([csvRows.join('\n')], {type:'text/csv'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `SF_Scan_${currentStore.replace(/\s+/g,'_')}_${new Date().toISOString().slice(0,10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+    showToast('CSV exported!');
 }
 
-// ── SCANNER ──
+// Scanner & manual lookup
 function toggleScanner() { scannerActive ? stopScanner() : startScanner(); }
-
 function startScanner() {
-  document.getElementById('scanner-viewport').style.display = 'block';
-  document.getElementById('scanner-placeholder').style.display = 'none';
-  document.getElementById('btnToggleScan').textContent = 'STOP SCANNING';
-  document.getElementById('btnToggleScan').classList.add('stop');
-  document.getElementById('scanDot').classList.add('active');
-  document.getElementById('scanLabel').textContent = 'Scanning...';
-
-  Quagga.init({
-    inputStream: { name:"Live", type:"LiveStream", target: document.getElementById('scanner-viewport'),
-      constraints: { facingMode:"environment", width:{ideal:1280}, height:{ideal:720} } },
-    decoder: { readers:["ean_reader","ean_8_reader","upc_reader","upc_e_reader","code_128_reader"] },
-    locate: true
-  }, err => {
-    if (err) { showStatus('error','Camera access denied'); stopScanner(); return; }
-    Quagga.start();
-    scannerActive = true;
-  });
-
-  Quagga.onDetected(result => {
-    const code = result.codeResult.code;
-    if (scanCooldown || code === lastScanned) return;
-    scanCooldown = true; lastScanned = code;
-    document.getElementById('manualBarcode').value = code;
-    stopScanner();
-    fetchProduct(code);
-    setTimeout(() => { scanCooldown = false; }, 3000);
-  });
+    document.getElementById('scanner-viewport').style.display = 'block';
+    document.getElementById('scanner-placeholder').style.display = 'none';
+    document.getElementById('btnToggleScan').textContent = 'STOP SCANNING';
+    document.getElementById('btnToggleScan').classList.add('stop');
+    document.getElementById('scanDot').classList.add('active');
+    document.getElementById('scanLabel').textContent = 'Scanning...';
+    Quagga.init({
+        inputStream: { name:"Live", type:"LiveStream", target: document.getElementById('scanner-viewport'),
+            constraints: { facingMode:"environment", width:{ideal:1280}, height:{ideal:720} } },
+        decoder: { readers:["ean_reader","ean_8_reader","upc_reader","upc_e_reader","code_128_reader"] },
+        locate: true
+    }, err => {
+        if (err) { showStatus('error','Camera access denied'); stopScanner(); return; }
+        Quagga.start();
+        scannerActive = true;
+    });
+    Quagga.onDetected(result => {
+        const code = result.codeResult.code;
+        if (scanCooldown || code === lastScanned) return;
+        scanCooldown = true; lastScanned = code;
+        document.getElementById('manualBarcode').value = code;
+        stopScanner();
+        fetchProduct(code);
+        setTimeout(() => { scanCooldown = false; }, 3000);
+    });
 }
-
 function stopScanner() {
-  Quagga.stop(); scannerActive = false;
-  document.getElementById('scanner-viewport').style.display = 'none';
-  document.getElementById('scanner-placeholder').style.display = 'flex';
-  document.getElementById('btnToggleScan').textContent = 'START SCANNING';
-  document.getElementById('btnToggleScan').classList.remove('stop');
-  document.getElementById('scanDot').classList.remove('active');
-  document.getElementById('scanLabel').textContent = 'Camera Scanner';
+    Quagga.stop(); scannerActive = false;
+    document.getElementById('scanner-viewport').style.display = 'none';
+    document.getElementById('scanner-placeholder').style.display = 'flex';
+    document.getElementById('btnToggleScan').textContent = 'START SCANNING';
+    document.getElementById('btnToggleScan').classList.remove('stop');
+    document.getElementById('scanDot').classList.remove('active');
+    document.getElementById('scanLabel').textContent = 'Camera Scanner';
 }
-
 function lookupManual() {
-  const val = document.getElementById('manualBarcode').value.trim();
-  if (!val) return;
-  lastScanned = val;
-  fetchProduct(val);
+    const val = document.getElementById('manualBarcode').value.trim();
+    if (!val) return;
+    lastScanned = val;
+    fetchProduct(val);
 }
-
 document.getElementById('manualBarcode').addEventListener('keydown', e => { if(e.key==='Enter') lookupManual(); });
-
 function showToast(msg) {
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), 2200);
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2200);
 }
 
+// Initial render
 renderRecords();
 </script>
 </body>
